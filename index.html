@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бородино Доставка</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
+        .container { max-width: 400px; margin: 0 auto; }
+        h1 { text-align: center; color: #333; }
+        .menu-item {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-item button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .menu-item button:active { opacity: 0.8; }
+        .cart {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .cart input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .cart button {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .cart button:active { opacity: 0.8; }
+        .status { text-align: center; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍕 Бородино Доставка</h1>
+
+        <div id="menu">
+            <div class="menu-item">
+                <span>Маргарита — 450₽</span>
+                <button onclick="addToCart('Маргарита — 450₽')">+</button>
+            </div>
+            <div class="menu-item">
+                <span>Пепперони — 550₽</span>
+                <button onclick="addToCart('Пепперони — 550₽')">+</button>
+            </div>
+            <div class="menu-item">
+                <span>Сырная — 500₽</span>
+                <button onclick="addToCart('Сырная — 500₽')">+</button>
+            </div>
+        </div>
+
+        <div class="cart">
+            <h3>🛒 Корзина</h3>
+            <div id="cart-items" style="margin-bottom:10px;">Товаров: 0</div>
+            <input type="text" id="address" placeholder="📍 Адрес доставки">
+            <button onclick="sendOrder()">✅ Оформить заказ</button>
+            <div id="status" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+
+        function addToCart(item) {
+            cart.push(item);
+            document.getElementById('cart-items').innerText = 'Товаров: ' + cart.length;
+        }
+
+        async function sendOrder() {
+            const address = document.getElementById('address').value;
+            if (cart.length === 0) {
+                document.getElementById('status').innerText = '❌ Выберите товар';
+                return;
+            }
+            if (!address) {
+                document.getElementById('status').innerText = '❌ Введите адрес';
+                return;
+            }
+
+            const payload = {
+                user_id: 123456789,
+                username: 'vk_user',
+                item: cart.join(', '),
+                address: address,
+                source: 'vk'
+            };
+
+            try {
+                const response = await fetch('http://localhost:8765/api/vk_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    document.getElementById('status').innerText = '✅ Заказ оформлен!';
+                    cart = [];
+                    document.getElementById('cart-items').innerText = 'Товаров: 0';
+                    document.getElementById('address').value = '';
+                } else {
+                    document.getElementById('status').innerText = '❌ Ошибка при оформлении';
+                }
+            } catch (e) {
+                document.getElementById('status').innerText = '❌ Ошибка соединения';
+            }
+        }
+    </script>
+</body>
+</html>
