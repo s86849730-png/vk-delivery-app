@@ -132,5 +132,15 @@
             }
         }
     </script>
+<script>
+    // Инициализация VK Bridge
+    vkBridge.send('VKWebAppInit', {})
+        .then(() => {
+            console.log('Приложение инициализировано в VK');
+        })
+        .catch((error) => {
+            console.error('Ошибка инициализации VK Bridge:', error);
+        });
+</script>
 </body>
 </html>
