@@ -133,14 +133,17 @@
         }
     </script>
 <script>
-    // Инициализация VK Bridge
-    vkBridge.send('VKWebAppInit', {})
-        .then(() => {
-            console.log('Приложение инициализировано в VK');
-        })
-        .catch((error) => {
-            console.error('Ошибка инициализации VK Bridge:', error);
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        vkBridge.send('VKWebAppInit', {})
+            .then(() => {
+                console.log('✅ Приложение инициализировано в VK');
+                // Можно показать приветствие пользователю
+            })
+            .catch((error) => {
+                console.error('❌ Ошибка инициализации:', error);
+                alert('Ошибка инициализации приложения. Попробуйте перезагрузить страницу.');
+            });
+    });
 </script>
 </body>
 </html>
