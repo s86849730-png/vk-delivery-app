@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Авоська — Доставка</title>
 
-    <!-- 1. Подключаем VK Bridge -->
+    <!-- Подключаем VK Bridge -->
     <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js"></script>
 
     <style>
@@ -97,36 +97,28 @@
     </div>
 
     <script>
-        // 2. ИНИЦИАЛИЗАЦИЯ — СРАЗУ, БЕЗ ОЖИДАНИЙ
-        (function() {
-            // Проверяем, загрузился ли VK Bridge
-            if (typeof vkBridge === 'undefined') {
-                document.getElementById('loading').innerText = '❌ Ошибка загрузки: VK Bridge не найден. Проверьте интернет.';
-                return;
-            }
-
-            // Отправляем сигнал инициализации
-            // Проверяем, загрузилась ли библиотека
-if (typeof vkBridge !== 'undefined') {
-    // Если да — отправляем сигнал инициализации
-    vkBridge.send('VKWebAppInit', {})
-        .then(() => console.log('✅ VKAppInit OK'))
-        .catch(e => console.error('❌ Init error', e));
-} else {
-    // Если нет — показываем предупреждение и пробуем ещё раз через секунду
-    console.warn('⏳ VK Bridge ещё не загружен, пробуем позже...');
-    setTimeout(() => {
+        // Проверяем, загрузилась ли библиотека
         if (typeof vkBridge !== 'undefined') {
+            // Если да — отправляем сигнал инициализации
             vkBridge.send('VKWebAppInit', {})
-                .then(() => console.log('✅ VKAppInit OK (повторно)'))
-                .catch(e => console.error('❌ Init error (повторно)', e));
+                .then(() => console.log('✅ VKAppInit OK'))
+                .catch(e => console.error('❌ Init error', e));
         } else {
-            console.error('❌ VK Bridge так и не загрузился');
-            document.body.innerHTML = '<h2>⚠️ Ошибка загрузки приложения</h2><p>Не удалось загрузить компоненты VK. Проверьте интернет-соединение.</p>';
+            // Если нет — показываем предупреждение и пробуем ещё раз через секунду
+            console.warn('⏳ VK Bridge ещё не загружен, пробуем позже...');
+            setTimeout(() => {
+                if (typeof vkBridge !== 'undefined') {
+                    vkBridge.send('VKWebAppInit', {})
+                        .then(() => console.log('✅ VKAppInit OK (повторно)'))
+                        .catch(e => console.error('❌ Init error (повторно)', e));
+                } else {
+                    console.error('❌ VK Bridge так и не загрузился');
+                    document.body.innerHTML = '<h2>⚠️ Ошибка загрузки приложения</h2><p>Не удалось загрузить компоненты VK. Проверьте интернет-соединение.</p>';
+                }
+            }, 1000);
         }
-    }, 1000);
-}
-        // 3. ЛОГИКА КОРЗИНЫ И ЗАКАЗОВ
+
+        // Логика корзины и заказов
         let cart = [];
 
         function addToCart(item) {
@@ -154,7 +146,6 @@ if (typeof vkBridge !== 'undefined') {
             };
 
             try {
-                // ⚠️ ЗДЕСЬ ПОТОМ ЗАМЕНИШЬ localhost НА СВОЙ IP
                 const response = await fetch('http://localhost:8765/api/vk_order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
