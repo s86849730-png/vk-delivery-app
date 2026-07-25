@@ -6,7 +6,17 @@
     <title>Авоська — Доставка</title>
 
     <!-- Подключаем VK Bridge -->
-    <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js"></script>
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script>
+    // Если основная библиотека не загрузилась через 3 секунды — подгружаем резервную
+    setTimeout(function() {
+        if (typeof vkBridge === 'undefined') {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js';
+            document.head.appendChild(script);
+        }
+    }, 3000);
+</script>
 
     <style>
         body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
