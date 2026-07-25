@@ -6,7 +6,7 @@
     <title>Авоська — Доставка</title>
 
     <!-- 1. Подключаем VK Bridge -->
-    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js"></script>
 
     <style>
         body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
@@ -106,18 +106,26 @@
             }
 
             // Отправляем сигнал инициализации
+            // Проверяем, загрузилась ли библиотека
+if (typeof vkBridge !== 'undefined') {
+    // Если да — отправляем сигнал инициализации
+    vkBridge.send('VKWebAppInit', {})
+        .then(() => console.log('✅ VKAppInit OK'))
+        .catch(e => console.error('❌ Init error', e));
+} else {
+    // Если нет — показываем предупреждение и пробуем ещё раз через секунду
+    console.warn('⏳ VK Bridge ещё не загружен, пробуем позже...');
+    setTimeout(() => {
+        if (typeof vkBridge !== 'undefined') {
             vkBridge.send('VKWebAppInit', {})
-                .then(() => {
-                    console.log('✅ Приложение инициализировано в VK');
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('app').classList.remove('hidden');
-                })
-                .catch((error) => {
-                    console.error('❌ Ошибка инициализации:', error);
-                    document.getElementById('loading').innerHTML = '⚠️ Ошибка инициализации. <br> Перезагрузите страницу или попробуйте позже.';
-                });
-        })();
-
+                .then(() => console.log('✅ VKAppInit OK (повторно)'))
+                .catch(e => console.error('❌ Init error (повторно)', e));
+        } else {
+            console.error('❌ VK Bridge так и не загрузился');
+            document.body.innerHTML = '<h2>⚠️ Ошибка загрузки приложения</h2><p>Не удалось загрузить компоненты VK. Проверьте интернет-соединение.</p>';
+        }
+    }, 1000);
+}
         // 3. ЛОГИКА КОРЗИНЫ И ЗАКАЗОВ
         let cart = [];
 
