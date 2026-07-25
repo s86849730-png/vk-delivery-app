@@ -6,17 +6,7 @@
     <title>Авоська — Доставка</title>
 
     <!-- Подключаем VK Bridge -->
-    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-    <script>
-    // Если основная библиотека не загрузилась через 3 секунды — подгружаем резервную
-    setTimeout(function() {
-        if (typeof vkBridge === 'undefined') {
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js';
-            document.head.appendChild(script);
-        }
-    }, 3000);
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js"></script>
 
     <style>
         body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
@@ -109,17 +99,23 @@
     <script>
         // Проверяем, загрузилась ли библиотека
         if (typeof vkBridge !== 'undefined') {
-            // Если да — отправляем сигнал инициализации
             vkBridge.send('VKWebAppInit', {})
-                .then(() => console.log('✅ VKAppInit OK'))
+                .then(() => {
+                    console.log('✅ VKAppInit OK');
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                })
                 .catch(e => console.error('❌ Init error', e));
         } else {
-            // Если нет — показываем предупреждение и пробуем ещё раз через секунду
             console.warn('⏳ VK Bridge ещё не загружен, пробуем позже...');
             setTimeout(() => {
                 if (typeof vkBridge !== 'undefined') {
                     vkBridge.send('VKWebAppInit', {})
-                        .then(() => console.log('✅ VKAppInit OK (повторно)'))
+                        .then(() => {
+                            console.log('✅ VKAppInit OK (повторно)');
+                            document.getElementById('loading').classList.add('hidden');
+                            document.getElementById('app').classList.remove('hidden');
+                        })
                         .catch(e => console.error('❌ Init error (повторно)', e));
                 } else {
                     console.error('❌ VK Bridge так и не загрузился');
