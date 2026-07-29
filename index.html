@@ -61,12 +61,31 @@
             background: #6c5ce7;
             margin-top: 8px;
         }
+        .cart .btn-orders {
+            background: #e17055;
+            margin-top: 8px;
+        }
         .status-text { text-align: center; margin-top: 10px; font-size: 14px; color: #555; }
         .loading { text-align: center; font-size: 18px; padding: 40px; color: #888; }
         .hidden { display: none; }
-        .orders-list { margin-top: 10px; font-size: 14px; color: #333; background: #f8f9fa; padding: 12px; border-radius: 8px; }
-        .orders-list .order-item { padding: 6px 0; border-bottom: 1px solid #eee; }
+        .orders-list {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .orders-list .order-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+        }
         .orders-list .order-item:last-child { border-bottom: none; }
+        .orders-list .active-section { border-left: 3px solid #fdcb6e; padding-left: 10px; margin-bottom: 8px; }
+        .orders-list .completed-section { border-left: 3px solid #00b894; padding-left: 10px; }
+        .orders-list .empty-msg { color: #888; text-align: center; padding: 12px 0; }
     </style>
 </head>
 <body>
@@ -99,9 +118,11 @@
             <input type="tel" id="phone" placeholder="📞 Телефон для связи">
             <button onclick="sendOrder()">✅ Оформить заказ</button>
             <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
-            <button onclick="getOrders()" class="btn-secondary" style="background:#e17055;">📋 Мои заказы</button>
+            <button onclick="getOrders()" class="btn-orders">📋 Мои заказы</button>
             <div id="status" class="status-text"></div>
-            <div id="orders-list" class="orders-list hidden"></div>
+            <div id="orders-list" class="orders-list hidden">
+                <div class="empty-msg">Нажмите «Мои заказы», чтобы увидеть список</div>
+            </div>
         </div>
     </div>
 
@@ -151,6 +172,7 @@
                     document.getElementById('cart-items').innerText = 'Товаров: 0';
                     document.getElementById('address').value = '';
                     document.getElementById('phone').value = '';
+                    getOrders(); // обновляем список заказов
                 } else {
                     document.getElementById('status').innerText = '❌ Ошибка при оформлении';
                 }
@@ -163,7 +185,7 @@
             try {
                 const response = await fetch(`https://accessory-pound-ada-produced.trycloudflare.com/api/order_status/${userId}`);
                 const data = await response.json();
-                document.getElementById('status').innerText = `📦 Статус: ${data.status}`;
+                document.getElementById('status').innerText = `📦 Статус последнего заказа: ${data.status}`;
             } catch (e) {
                 document.getElementById('status').innerText = '❌ Ошибка получения статуса';
             }
@@ -176,27 +198,52 @@
                 const data = await response.json();
                 list.classList.remove('hidden');
                 if (data.orders && data.orders.length > 0) {
-                    let html = '<b>📦 Ваши заказы:</b><br>';
-                    data.orders.forEach((o, i) => {
-                        const status = o.status || '🟡 Ожидает';
-                        html += `<div class="order-item">${i+1}. ${o.item} — ${status}</div>`;
-                    });
+                    // Разделяем на активные и завершённые
+                    const active = data.orders.filter(o => 
+                        o.status !== '✅ Доставлен' && o.status !== '❌ Отменён'
+                    );
+                    const completed = data.orders.filter(o => 
+                        o.status === '✅ Доставлен' || o.status === '❌ Отменён'
+                    );
+                    
+                    let html = '';
+                    if (active.length > 0) {
+                        html += `<div class="active-section"><b>🟡 Активные заказы (${active.length}):</b><br>`;
+                        active.forEach((o, i) => {
+                            const status = o.status || '🟡 Ожидает';
+                            html += `<div class="order-item">${i+1}. ${o.item} — ${status}</div>`;
+                        });
+                        html += `</div>`;
+                    }
+                    if (completed.length > 0) {
+                        html += `<div class="completed-section"><b>✅ Завершённые (${completed.length}):</b><br>`;
+                        completed.forEach((o, i) => {
+                            const status = o.status || '✅ Доставлен';
+                            html += `<div class="order-item">${i+1}. ${o.item} — ${status}</div>`;
+                        });
+                        html += `</div>`;
+                    }
+                    if (active.length === 0 && completed.length === 0) {
+                        html = '<div class="empty-msg">У вас пока нет заказов</div>';
+                    }
                     list.innerHTML = html;
                 } else {
-                    list.innerHTML = 'У вас пока нет заказов';
+                    list.innerHTML = '<div class="empty-msg">У вас пока нет заказов</div>';
                 }
             } catch (e) {
-                list.innerHTML = '❌ Ошибка загрузки заказов';
+                list.innerHTML = '<div class="empty-msg">❌ Ошибка загрузки заказов</div>';
             }
         }
 
-        // VK Bridge
+        // VK Bridge инициализация
         if (typeof vkBridge !== 'undefined') {
             vkBridge.send('VKWebAppInit', {})
                 .then(() => {
                     console.log('✅ VKAppInit OK');
                     document.getElementById('loading').classList.add('hidden');
                     document.getElementById('app').classList.remove('hidden');
+                    // Автоматически показываем заказы
+                    getOrders();
                 })
                 .catch(e => console.error('❌ Init error', e));
         }
