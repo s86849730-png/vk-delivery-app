@@ -57,9 +57,16 @@
             font-size: 16px;
             cursor: pointer;
         }
+        .cart .btn-secondary {
+            background: #6c5ce7;
+            margin-top: 8px;
+        }
         .status-text { text-align: center; margin-top: 10px; font-size: 14px; color: #555; }
         .loading { text-align: center; font-size: 18px; padding: 40px; color: #888; }
         .hidden { display: none; }
+        .orders-list { margin-top: 10px; font-size: 14px; color: #333; background: #f8f9fa; padding: 12px; border-radius: 8px; }
+        .orders-list .order-item { padding: 6px 0; border-bottom: 1px solid #eee; }
+        .orders-list .order-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -91,8 +98,10 @@
             <input type="text" id="address" placeholder="📍 Адрес доставки">
             <input type="tel" id="phone" placeholder="📞 Телефон для связи">
             <button onclick="sendOrder()">✅ Оформить заказ</button>
-            <button onclick="checkStatus()" style="background:#667eea; margin-top: 8px;">📋 Узнать статус заказа</button>
+            <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
+            <button onclick="getOrders()" class="btn-secondary" style="background:#e17055;">📋 Мои заказы</button>
             <div id="status" class="status-text"></div>
+            <div id="orders-list" class="orders-list hidden"></div>
         </div>
     </div>
 
@@ -157,6 +166,27 @@
                 document.getElementById('status').innerText = `📦 Статус: ${data.status}`;
             } catch (e) {
                 document.getElementById('status').innerText = '❌ Ошибка получения статуса';
+            }
+        }
+
+        async function getOrders() {
+            const list = document.getElementById('orders-list');
+            try {
+                const response = await fetch(`https://accessory-pound-ada-produced.trycloudflare.com/api/user_orders/${userId}`);
+                const data = await response.json();
+                list.classList.remove('hidden');
+                if (data.orders && data.orders.length > 0) {
+                    let html = '<b>📦 Ваши заказы:</b><br>';
+                    data.orders.forEach((o, i) => {
+                        const status = o.status || '🟡 Ожидает';
+                        html += `<div class="order-item">${i+1}. ${o.item} — ${status}</div>`;
+                    });
+                    list.innerHTML = html;
+                } else {
+                    list.innerHTML = 'У вас пока нет заказов';
+                }
+            } catch (e) {
+                list.innerHTML = '❌ Ошибка загрузки заказов';
             }
         }
 
