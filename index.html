@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DoSHtavKa — Доставка</title>
-
-    <!-- VK Bridge -->
     <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js"></script>
-
     <style>
         body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
         .container { max-width: 400px; margin: 0 auto; }
@@ -78,10 +75,7 @@
             max-height: 300px;
             overflow-y: auto;
         }
-        .orders-list .order-item {
-            padding: 6px 0;
-            border-bottom: 1px solid #eee;
-        }
+        .orders-list .order-item { padding: 6px 0; border-bottom: 1px solid #eee; }
         .orders-list .order-item:last-child { border-bottom: none; }
         .orders-list .active-section { border-left: 3px solid #fdcb6e; padding-left: 10px; margin-bottom: 8px; }
         .orders-list .completed-section { border-left: 3px solid #00b894; padding-left: 10px; }
@@ -89,28 +83,11 @@
     </style>
 </head>
 <body>
-
     <div id="loading" class="loading">⏳ Загрузка...</div>
-
     <div id="app" class="container hidden">
         <h1>🚀 DoSHtavKa</h1>
         <p style="text-align:center; color:#555;">Доставка из Бородино</p>
-
-        <div id="menu">
-            <div class="menu-item">
-                <span>Маргарита — 450₽</span>
-                <button onclick="addToCart('Маргарита — 450₽')">+</button>
-            </div>
-            <div class="menu-item">
-                <span>Пепперони — 550₽</span>
-                <button onclick="addToCart('Пепперони — 550₽')">+</button>
-            </div>
-            <div class="menu-item">
-                <span>Сырная — 500₽</span>
-                <button onclick="addToCart('Сырная — 500₽')">+</button>
-            </div>
-        </div>
-
+        <div id="menu"></div>
         <div class="cart">
             <h3>🛒 Корзина</h3>
             <div id="cart-items">Товаров: 0</div>
@@ -120,15 +97,43 @@
             <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
             <button onclick="getOrders()" class="btn-orders">📋 Мои заказы</button>
             <div id="status" class="status-text"></div>
-            <div id="orders-list" class="orders-list hidden">
-                <div class="empty-msg">Нажмите «Мои заказы», чтобы увидеть список</div>
-            </div>
+            <div id="orders-list" class="orders-list hidden"><div class="empty-msg">Нажмите «Мои заказы», чтобы увидеть список</div></div>
         </div>
     </div>
-
     <script>
+        const API_BASE = 'https://accessory-pound-ada-produced.trycloudflare.com';
         let cart = [];
-        let userId = 123456789; // позже подставим реальный ID из VK
+        let userId = 123456789;
+
+        async function loadShops() {
+            try {
+                const res = await fetch(`${API_BASE}/api/shops`);
+                const data = await res.json();
+                const menu = document.getElementById('menu');
+                menu.innerHTML = '';
+                if (data.shops && data.shops.length > 0) {
+                    data.shops.forEach(shop => {
+                        const shopTitle = document.createElement('div');
+                        shopTitle.style.cssText = 'font-weight:bold; margin:12px 0 6px; color:#333;';
+                        shopTitle.innerText = '🏪 ' + shop.name;
+                        menu.appendChild(shopTitle);
+                        shop.items.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'menu-item';
+                            div.innerHTML = `
+                                <span>${item.name} — ${item.price}</span>
+                                <button onclick="addToCart('${item.name} — ${item.price}')">+</button>
+                            `;
+                            menu.appendChild(div);
+                        });
+                    });
+                } else {
+                    menu.innerHTML = '<p style="text-align:center;color:#888;">Меню пока пусто. Загляните позже!</p>';
+                }
+            } catch (e) {
+                document.getElementById('menu').innerHTML = '<p style="text-align:center;color:#e74c3c;">❌ Ошибка загрузки меню</p>';
+            }
+        }
 
         function addToCart(item) {
             cart.push(item);
@@ -138,30 +143,12 @@
         async function sendOrder() {
             const address = document.getElementById('address').value;
             const phone = document.getElementById('phone').value;
-            if (cart.length === 0) {
-                document.getElementById('status').innerText = '❌ Выберите товар';
-                return;
-            }
-            if (!address) {
-                document.getElementById('status').innerText = '❌ Введите адрес';
-                return;
-            }
-            if (!phone) {
-                document.getElementById('status').innerText = '❌ Введите телефон';
-                return;
-            }
-
-            const payload = {
-                user_id: userId,
-                username: 'vk_user',
-                item: cart.join(', '),
-                address: address,
-                phone: phone,
-                source: 'vk'
-            };
-
+            if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
+            if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
+            if (!phone) { document.getElementById('status').innerText = '❌ Введите телефон'; return; }
+            const payload = { user_id: userId, username: 'vk_user', item: cart.join(', '), address, phone, source: 'vk' };
             try {
-                const response = await fetch('https://accessory-pound-ada-produced.trycloudflare.com/api/vk_order', {
+                const response = await fetch(`${API_BASE}/api/vk_order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -172,7 +159,7 @@
                     document.getElementById('cart-items').innerText = 'Товаров: 0';
                     document.getElementById('address').value = '';
                     document.getElementById('phone').value = '';
-                    getOrders(); // обновляем список заказов
+                    getOrders();
                 } else {
                     document.getElementById('status').innerText = '❌ Ошибка при оформлении';
                 }
@@ -183,8 +170,8 @@
 
         async function checkStatus() {
             try {
-                const response = await fetch(`https://accessory-pound-ada-produced.trycloudflare.com/api/order_status/${userId}`);
-                const data = await response.json();
+                const res = await fetch(`${API_BASE}/api/order_status/${userId}`);
+                const data = await res.json();
                 document.getElementById('status').innerText = `📦 Статус последнего заказа: ${data.status}`;
             } catch (e) {
                 document.getElementById('status').innerText = '❌ Ошибка получения статуса';
@@ -194,39 +181,28 @@
         async function getOrders() {
             const list = document.getElementById('orders-list');
             try {
-                const response = await fetch(`https://accessory-pound-ada-produced.trycloudflare.com/api/user_orders/${userId}`);
-                const data = await response.json();
+                const res = await fetch(`${API_BASE}/api/user_orders/${userId}`);
+                const data = await res.json();
                 list.classList.remove('hidden');
                 if (data.orders && data.orders.length > 0) {
-                    // Разделяем на активные и завершённые
-                    const active = data.orders.filter(o => 
-                        o.status !== '✅ Доставлен' && o.status !== '❌ Отменён'
-                    );
-                    const completed = data.orders.filter(o => 
-                        o.status === '✅ Доставлен' || o.status === '❌ Отменён'
-                    );
-                    
+                    const active = data.orders.filter(o => o.status !== '✅ Доставлен' && o.status !== '❌ Отменён');
+                    const completed = data.orders.filter(o => o.status === '✅ Доставлен' || o.status === '❌ Отменён');
                     let html = '';
                     if (active.length > 0) {
                         html += `<div class="active-section"><b>🟡 Активные заказы (${active.length}):</b><br>`;
                         active.forEach((o, i) => {
-                            const status = o.status || '🟡 Ожидает';
-                            html += `<div class="order-item">${i+1}. ${o.item} — ${status}</div>`;
+                            html += `<div class="order-item">${i+1}. ${o.item} — ${o.status || '🟡 Ожидает'}</div>`;
                         });
                         html += `</div>`;
                     }
                     if (completed.length > 0) {
                         html += `<div class="completed-section"><b>✅ Завершённые (${completed.length}):</b><br>`;
                         completed.forEach((o, i) => {
-                            const status = o.status || '✅ Доставлен';
-                            html += `<div class="order-item">${i+1}. ${o.item} — ${status}</div>`;
+                            html += `<div class="order-item">${i+1}. ${o.item} — ${o.status || '✅ Доставлен'}</div>`;
                         });
                         html += `</div>`;
                     }
-                    if (active.length === 0 && completed.length === 0) {
-                        html = '<div class="empty-msg">У вас пока нет заказов</div>';
-                    }
-                    list.innerHTML = html;
+                    list.innerHTML = html || '<div class="empty-msg">У вас пока нет заказов</div>';
                 } else {
                     list.innerHTML = '<div class="empty-msg">У вас пока нет заказов</div>';
                 }
@@ -235,14 +211,13 @@
             }
         }
 
-        // VK Bridge инициализация
         if (typeof vkBridge !== 'undefined') {
             vkBridge.send('VKWebAppInit', {})
                 .then(() => {
                     console.log('✅ VKAppInit OK');
                     document.getElementById('loading').classList.add('hidden');
                     document.getElementById('app').classList.remove('hidden');
-                    // Автоматически показываем заказы
+                    loadShops();
                     getOrders();
                 })
                 .catch(e => console.error('❌ Init error', e));
