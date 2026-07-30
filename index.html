@@ -80,6 +80,8 @@
         .orders-list .active-section { border-left: 3px solid #fdcb6e; padding-left: 10px; margin-bottom: 8px; }
         .orders-list .completed-section { border-left: 3px solid #00b894; padding-left: 10px; }
         .orders-list .empty-msg { color: #888; text-align: center; padding: 12px 0; }
+        .cart-items-detail { font-size: 14px; color: #555; margin: 6px 0; }
+        .cart-items-detail .shop-name { font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
@@ -91,6 +93,7 @@
         <div class="cart">
             <h3>🛒 Корзина</h3>
             <div id="cart-items">Товаров: 0</div>
+            <div id="cart-details" class="cart-items-detail"></div>
             <input type="text" id="address" placeholder="📍 Адрес доставки">
             <input type="tel" id="phone" placeholder="📞 Телефон для связи">
             <button onclick="sendOrder()">✅ Оформить заказ</button>
@@ -102,7 +105,7 @@
     </div>
     <script>
         const API_BASE = 'https://accessory-pound-ada-produced.trycloudflare.com';
-        let cart = [];
+        let cart = []; // { shop: "Пиццерия", name: "Маргарита — 450₽" }
         let userId = 123456789;
 
         async function loadShops() {
@@ -122,7 +125,7 @@
                             div.className = 'menu-item';
                             div.innerHTML = `
                                 <span>${item.name} — ${item.price}</span>
-                                <button onclick="addToCart('${item.name} — ${item.price}')">+</button>
+                                <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}')">+</button>
                             `;
                             menu.appendChild(div);
                         });
@@ -135,9 +138,28 @@
             }
         }
 
-        function addToCart(item) {
-            cart.push(item);
+        function addToCart(shop, item) {
+            cart.push({ shop, name: item });
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
             document.getElementById('cart-items').innerText = 'Товаров: ' + cart.length;
+            const details = document.getElementById('cart-details');
+            if (cart.length === 0) {
+                details.innerHTML = '';
+                return;
+            }
+            const grouped = {};
+            cart.forEach(item => {
+                if (!grouped[item.shop]) grouped[item.shop] = [];
+                grouped[item.shop].push(item.name);
+            });
+            let html = '';
+            for (const shop in grouped) {
+                html += `<div><span class="shop-name">${shop}</span>: ${grouped[shop].join(', ')}</div>`;
+            }
+            details.innerHTML = html;
         }
 
         async function sendOrder() {
@@ -146,25 +168,45 @@
             if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
             if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
             if (!phone) { document.getElementById('status').innerText = '❌ Введите телефон'; return; }
-            const payload = { user_id: userId, username: 'vk_user', item: cart.join(', '), address, phone, source: 'vk' };
-            try {
-                const response = await fetch(`${API_BASE}/api/vk_order`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (response.ok) {
-                    document.getElementById('status').innerText = '✅ Заказ оформлен!';
-                    cart = [];
-                    document.getElementById('cart-items').innerText = 'Товаров: 0';
-                    document.getElementById('address').value = '';
-                    document.getElementById('phone').value = '';
-                    getOrders();
-                } else {
-                    document.getElementById('status').innerText = '❌ Ошибка при оформлении';
+
+            const grouped = {};
+            cart.forEach(item => {
+                if (!grouped[item.shop]) grouped[item.shop] = [];
+                grouped[item.shop].push(item.name);
+            });
+
+            let allOk = true;
+            for (const shop in grouped) {
+                const payload = {
+                    user_id: userId,
+                    username: 'vk_user',
+                    shop: shop,
+                    item: grouped[shop].join(', '),
+                    address: address,
+                    phone: phone,
+                    source: 'vk'
+                };
+                try {
+                    const response = await fetch(`${API_BASE}/api/vk_order`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) allOk = false;
+                } catch (e) {
+                    allOk = false;
                 }
-            } catch (e) {
-                document.getElementById('status').innerText = '❌ Ошибка соединения';
+            }
+
+            if (allOk) {
+                document.getElementById('status').innerText = '✅ Все заказы оформлены!';
+                cart = [];
+                updateCartDisplay();
+                document.getElementById('address').value = '';
+                document.getElementById('phone').value = '';
+                getOrders();
+            } else {
+                document.getElementById('status').innerText = '❌ Ошибка при оформлении одного из заказов';
             }
         }
 
@@ -191,14 +233,14 @@
                     if (active.length > 0) {
                         html += `<div class="active-section"><b>🟡 Активные заказы (${active.length}):</b><br>`;
                         active.forEach((o, i) => {
-                            html += `<div class="order-item">${i+1}. ${o.item} — ${o.status || '🟡 Ожидает'}</div>`;
+                            html += `<div class="order-item">${i+1}. ${o.item} (${o.shop || 'магазин'}) — ${o.status || '🟡 Ожидает'}</div>`;
                         });
                         html += `</div>`;
                     }
                     if (completed.length > 0) {
                         html += `<div class="completed-section"><b>✅ Завершённые (${completed.length}):</b><br>`;
                         completed.forEach((o, i) => {
-                            html += `<div class="order-item">${i+1}. ${o.item} — ${o.status || '✅ Доставлен'}</div>`;
+                            html += `<div class="order-item">${i+1}. ${o.item} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'}</div>`;
                         });
                         html += `</div>`;
                     }
