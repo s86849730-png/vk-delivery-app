@@ -62,6 +62,11 @@
             background: #e17055;
             margin-top: 8px;
         }
+        .cart .btn-support {
+            background: #fdcb6e;
+            margin-top: 8px;
+            color: #333;
+        }
         .status-text { text-align: center; margin-top: 10px; font-size: 14px; color: #555; }
         .loading { text-align: center; font-size: 18px; padding: 40px; color: #888; }
         .hidden { display: none; }
@@ -82,6 +87,12 @@
         .orders-list .empty-msg { color: #888; text-align: center; padding: 12px 0; }
         .cart-items-detail { font-size: 14px; color: #555; margin: 6px 0; }
         .cart-items-detail .shop-name { font-weight: bold; color: #333; }
+        .rating-buttons { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .rating-buttons button { background: #f1c40f; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .rating-buttons button:hover { background: #f39c12; }
+        .support-form { margin-top: 10px; }
+        .support-form textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; box-sizing: border-box; }
+        .support-form button { margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -99,7 +110,13 @@
             <button onclick="sendOrder()">✅ Оформить заказ</button>
             <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
             <button onclick="getOrders()" class="btn-orders">📋 Мои заказы</button>
+            <button onclick="showSupport()" class="btn-support">🆘 Поддержка</button>
             <div id="status" class="status-text"></div>
+            <div id="support-form" class="support-form hidden">
+                <textarea id="support-message" rows="3" placeholder="Опишите вашу проблему..."></textarea>
+                <button onclick="sendSupport()">📤 Отправить</button>
+                <button onclick="hideSupport()" class="btn-secondary">❌ Отмена</button>
+            </div>
             <div id="orders-list" class="orders-list hidden"><div class="empty-msg">Нажмите «Мои заказы», чтобы увидеть список</div></div>
         </div>
     </div>
@@ -240,7 +257,12 @@
                     if (completed.length > 0) {
                         html += `<div class="completed-section"><b>✅ Завершённые (${completed.length}):</b><br>`;
                         completed.forEach((o, i) => {
-                            html += `<div class="order-item">${i+1}. ${o.item} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'}</div>`;
+                            const rating = o.rating || '⭐️ Не оценён';
+                            html += `<div class="order-item">${i+1}. ${o.item} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating}`;
+                            if (o.status === '✅ Доставлен' && (!o.rating || o.rating === '⭐️ Не оценён')) {
+                                html += ` <button onclick="rateOrder(${data.orders.length - 1 - i})" style="background:#f1c40f; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">⭐️ Оценить</button>`;
+                            }
+                            html += `</div>`;
                         });
                         html += `</div>`;
                     }
@@ -250,6 +272,45 @@
                 }
             } catch (e) {
                 list.innerHTML = '<div class="empty-msg">❌ Ошибка загрузки заказов</div>';
+            }
+        }
+
+        async function rateOrder(orderIndex) {
+            const rating = prompt('Оцените заказ от 1 до 5:', '5');
+            if (!rating || rating < 1 || rating > 5) {
+                alert('Пожалуйста, введите число от 1 до 5');
+                return;
+            }
+            try {
+                await fetch(`${API_BASE}/api/rate_order/${orderIndex}/${rating}`, { method: 'POST' });
+                getOrders();
+            } catch (e) {
+                alert('Ошибка отправки оценки');
+            }
+        }
+
+        function showSupport() {
+            document.getElementById('support-form').classList.remove('hidden');
+        }
+
+        function hideSupport() {
+            document.getElementById('support-form').classList.add('hidden');
+        }
+
+        async function sendSupport() {
+            const msg = document.getElementById('support-message').value;
+            if (!msg) { alert('Напишите сообщение'); return; }
+            try {
+                await fetch(`${API_BASE}/api/support`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, message: msg })
+                });
+                document.getElementById('support-message').value = '';
+                hideSupport();
+                document.getElementById('status').innerText = '✅ Сообщение отправлено в поддержку!';
+            } catch (e) {
+                document.getElementById('status').innerText = '❌ Ошибка отправки';
             }
         }
 
