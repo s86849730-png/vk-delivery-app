@@ -231,67 +231,67 @@
         }
 
         async function sendOrder() {
-            const address = document.getElementById('address').value;
-            const phone = document.getElementById('phone').value;
-            const comment = document.getElementById('order-comment').value;
-            if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
-            if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
-            if (!phone) { document.getElementById('status').innerText = '❌ Введите телефон'; return; }
+	    const address = document.getElementById('address').value;
+	    const phone = document.getElementById('phone').value;
+	    const comment = document.getElementById('order-comment').value;
+	    if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
+	    if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
+	    if (!phone) { document.getElementById('status').innerText = '❌ Введите телефон'; return; }
 
-            const grouped = {};
-            cart.forEach(item => {
-                if (!grouped[item.shop]) grouped[item.shop] = [];
-                grouped[item.shop].push(item.name);
-            });
+	    const grouped = {};
+	    cart.forEach(item => {
+	        if (!grouped[item.shop]) grouped[item.shop] = [];
+	        grouped[item.shop].push(item.name);
+	    });
 
-            let allOk = true;
-            for (const shop in grouped) {
-                const itemsList = grouped[shop].join(', ');
-                const payload = {
-                    user_id: userId,
-                    username: 'vk_user',
-                    shop: shop,
-                    item: itemsList,
-                    address: address,
-                    phone: phone,
-                    comment: comment,
-                    source: 'vk'
-                };
+	    let allOk = true;
+	    for (const shop in grouped) {
+	        const itemsList = grouped[shop].join(', ');
+	        const payload = {
+	            user_id: userId,
+	            username: 'vk_user',
+	            shop: shop,
+	            item: itemsList,
+	            address: address,
+	            phone: phone,
+	            comment: comment,
+	            source: 'vk'
+	        };
 
-                try {
-                    const response = await fetch(`${API_BASE}/api/vk_order`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    if (!response.ok || result.status === 'error') {
-                        allOk = false;
-                        document.getElementById('status').innerText = `❌ ${result.message || 'Ошибка'}`;
-                        // если сервер вернул ошибку о весе — показываем alert
-                        if (result.message && result.message.includes('превышает 20 кг')) {
-                            alert(result.message);
-                        }
-                        break;
-                    }
-                } catch (e) {
-                    allOk = false;
-                    document.getElementById('status').innerText = '❌ Ошибка соединения';
-                    break;
-                }
+	        try {
+	            const response = await fetch(`${API_BASE}/api/vk_order`, {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify(payload)
+	            });
+	            const result = await response.json();
+	            if (!response.ok || result.status === 'error') {
+	                allOk = false;
+	                document.getElementById('status').innerText = `❌ ${result.message || 'Ошибка'}`;
+	                if (result.message && result.message.includes('превышает 20 кг')) {
+	                    alert(result.message);
+	                }
+	                break;
+	            }
+	        } catch (e) {
+	            allOk = false;
+	            document.getElementById('status').innerText = '❌ Ошибка соединения';
+	            break;
+	        }
+	    } 
 
-            if (allOk) {
-                document.getElementById('status').innerText = '✅ Все заказы оформлены!';
-                cart = [];
-                updateCartDisplay();
-                document.getElementById('address').value = '';
-                document.getElementById('phone').value = '';
-                document.getElementById('order-comment').value = '';
-                getOrders();
-            } else {
-                document.getElementById('status').innerText = '❌ Ошибка при оформлении одного из заказов';
-            }
-        }
+	    if (allOk) {
+	        document.getElementById('status').innerText = '✅ Все заказы оформлены!';
+	        cart = [];
+	        updateCartDisplay();
+	        document.getElementById('address').value = '';
+	        document.getElementById('phone').value = '';
+	        document.getElementById('order-comment').value = '';
+	        getOrders();
+	    } else {
+	        document.getElementById('status').innerText = '❌ Ошибка при оформлении одного из заказов';
+	    }
+        } 
 
         async function checkStatus() {
             try {
