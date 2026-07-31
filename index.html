@@ -161,23 +161,32 @@
         }
 
         function updateCartDisplay() {
-            document.getElementById('cart-items').innerText = 'Товаров: ' + cart.length;
-            const details = document.getElementById('cart-details');
-            if (cart.length === 0) {
-                details.innerHTML = '';
-                return;
-            }
-            const grouped = {};
-            cart.forEach(item => {
-                if (!grouped[item.shop]) grouped[item.shop] = [];
-                grouped[item.shop].push(item.name);
-            });
-            let html = '';
-            for (const shop in grouped) {
-                html += `<div><span class="shop-name">${shop}</span>: ${grouped[shop].join(', ')}</div>`;
-            }
-            details.innerHTML = html;
-        }
+	    document.getElementById('cart-items').innerText = 'Товаров: ' + cart.length;
+	    const details = document.getElementById('cart-details');
+	    if (cart.length === 0) {
+	        details.innerHTML = '';
+	        return;
+	    }
+	    // Группируем товары
+	    const grouped = {};
+	    cart.forEach(item => {
+	        const key = item.shop + '|||' + item.name;
+	        if (!grouped[key]) {
+	            grouped[key] = {
+	                shop: item.shop,
+	                name: item.name,
+	                count: 0
+	            };
+	        }
+	        grouped[key].count += 1;
+	    });
+	    let html = '';
+	    for (const key in grouped) {
+	        const item = grouped[key];
+	        html += `<div><span class="shop-name">${item.shop}</span>: ${item.name} x${item.count}</div>`;
+	    }
+	    details.innerHTML = html;
+	}
 
         async function sendOrder() {
             const address = document.getElementById('address').value;
