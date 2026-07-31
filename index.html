@@ -105,6 +105,7 @@
             <h3>🛒 Корзина</h3>
             <div id="cart-items">Товаров: 0</div>
             <div id="cart-details" class="cart-items-detail"></div>
+            <div id="cart-total" style="font-weight:bold; margin-top:8px; color:#333;">💰 Итого: 0 ₽</div>
             <input type="text" id="address" placeholder="📍 Адрес доставки">
             <input type="tel" id="phone" placeholder="📞 Телефон для связи">
             <button onclick="sendOrder()">✅ Оформить заказ</button>
@@ -163,29 +164,43 @@
         function updateCartDisplay() {
 	    document.getElementById('cart-items').innerText = 'Товаров: ' + cart.length;
 	    const details = document.getElementById('cart-details');
+	    const totalElem = document.getElementById('cart-total');
+	    
 	    if (cart.length === 0) {
 	        details.innerHTML = '';
+	        if (totalElem) totalElem.innerText = '💰 Итого: 0 ₽';
 	        return;
 	    }
-	    // Группируем товары
+	    
+	    // Группируем товары и считаем сумму
 	    const grouped = {};
+	    let total = 0;
 	    cart.forEach(item => {
+	        // Извлекаем цену из названия (например, "Хлеб — 30 руб" → 30)
+	        const priceMatch = item.name.match(/(\d+)/);
+	        const price = priceMatch ? parseInt(priceMatch[0]) : 0;
+	        total += price;
+	        
 	        const key = item.shop + '|||' + item.name;
 	        if (!grouped[key]) {
 	            grouped[key] = {
 	                shop: item.shop,
 	                name: item.name,
-	                count: 0
+	                count: 0,
+	                price: price
 	            };
 	        }
 	        grouped[key].count += 1;
 	    });
+	    
 	    let html = '';
 	    for (const key in grouped) {
 	        const item = grouped[key];
-	        html += `<div><span class="shop-name">${item.shop}</span>: ${item.name} x${item.count}</div>`;
+	        const subtotal = item.price * item.count;
+	        html += `<div><span class="shop-name">${item.shop}</span>: ${item.name} x${item.count} = ${subtotal} ₽</div>`;
 	    }
 	    details.innerHTML = html;
+	    if (totalElem) totalElem.innerText = `💰 Итого: ${total} ₽`;
 	}
 
         async function sendOrder() {
