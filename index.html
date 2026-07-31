@@ -369,6 +369,38 @@
         function showSupport() {
             document.getElementById('support-form').classList.remove('hidden');
         }
+        
+        function formatOrderItems(itemText) {
+	    if (!itemText) return '';
+	    // Разбиваем строку
+	    let items = [];
+	    if (itemText.includes('\n')) {
+	        items = itemText.split('\n').filter(s => s.trim());
+	    } else {
+	        items = itemText.split(',').map(s => s.trim()).filter(s => s);
+	    }
+	    // Убираем лишние символы
+	    items = items.map(s => s.replace(/[•🛒Корзина:]/g, '').trim()).filter(s => s);
+
+	    // Группируем
+	    const grouped = {};
+	    items.forEach(item => {
+	        const clean = item.replace(/— \d+.*/, '').trim();
+	        if (!clean) return;
+	        if (!grouped[clean]) grouped[clean] = 0;
+	        grouped[clean] += 1;
+	    });
+
+	    let result = [];
+	    for (const name in grouped) {
+	        if (grouped[name] > 1) {
+	            result.push(`${name} x${grouped[name]}`);
+	        } else {
+	            result.push(name);
+	        }
+	    }
+	    return result.join(', ');
+	}
 
         function hideSupport() {
             document.getElementById('support-form').classList.add('hidden');
