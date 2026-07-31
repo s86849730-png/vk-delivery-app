@@ -88,6 +88,7 @@
         .comment-input { margin-top: 8px; }
         .cart-total { font-weight: bold; margin-top: 8px; color: #333; }
         .delivery-fee { color: #666; font-size: 13px; margin-top: 4px; }
+        .orders-list-btn { margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -198,19 +199,35 @@
             });
             
             let html = '';
-            let itemIndex = 0;
             for (const key in grouped) {
                 const item = grouped[key];
                 const subtotal = item.price * item.count;
+                const firstIdx = item.indices[0];
                 html += `<div class="cart-item-row">
                     <span><span class="shop-name">${item.shop}</span>: ${item.name} x${item.count} = ${subtotal} ₽</span>
-                    <button class="remove-btn" onclick="removeFromCart(${itemIndex})">✕</button>
+                    <button class="remove-btn" onclick="removeFromCart(${firstIdx})">✕</button>
                 </div>`;
-                itemIndex++;
             }
             details.innerHTML = html;
             totalElem.innerText = `💰 Итого: ${total + 150} ₽ (вкл. доставку 150 ₽)`;
             feeElem.innerText = `🚚 Доставка: 150 ₽`;
+        }
+
+        function getCartItems() {
+            const grouped = {};
+            cart.forEach(item => {
+                const key = item.shop + '|||' + item.name;
+                if (!grouped[key]) {
+                    grouped[key] = { shop: item.shop, name: item.name, count: 0 };
+                }
+                grouped[key].count += 1;
+            });
+            const result = [];
+            for (const key in grouped) {
+                const g = grouped[key];
+                result.push(`${g.shop}: ${g.name} x${g.count}`);
+            }
+            return result.join(', ');
         }
 
         async function sendOrder() {
@@ -229,27 +246,39 @@
 
             let allOk = true;
             for (const shop in grouped) {
+                const itemsList = grouped[shop].join(', ');
                 const payload = {
                     user_id: userId,
                     username: 'vk_user',
                     shop: shop,
-                    item: grouped[shop].join(', '),
+                    item: itemsList,
                     address: address,
                     phone: phone,
                     comment: comment,
                     source: 'vk'
                 };
+
                 try {
                     const response = await fetch(`${API_BASE}/api/vk_order`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (!response.ok) allOk = false;
+                    const result = await response.json();
+                    if (!response.ok || result.status === 'error') {
+                        allOk = false;
+                        document.getElementById('status').innerText = `❌ ${result.message || 'Ошибка'}`;
+                        // если сервер вернул ошибку о весе — показываем alert
+                        if (result.message && result.message.includes('превышает 20 кг')) {
+                            alert(result.message);
+                        }
+                        break;
+                    }
                 } catch (e) {
                     allOk = false;
+                    document.getElementById('status').innerText = '❌ Ошибка соединения';
+                    break;
                 }
-            }
 
             if (allOk) {
                 document.getElementById('status').innerText = '✅ Все заказы оформлены!';
@@ -292,18 +321,16 @@
                     if (active.length > 0) {
                         html += `<div class="active-section"><b>🟡 Активные заказы (${active.length}):</b><br>`;
                         active.forEach((o, i) => {
-                            const items = formatOrderItems(o.item);
-                            html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '🟡 Ожидает'}</div>`;
+                            html += `<div class="order-item">${i+1}. ${o.item} (${o.shop || 'магазин'}) — ${o.status || '🟡 Ожидает'}</div>`;
                         });
                         html += `</div>`;
                     }
                     if (completed.length > 0) {
                         html += `<div class="completed-section"><b>✅ Завершённые (${completed.length}):</b><br>`;
                         completed.forEach((o, i) => {
-                            const items = formatOrderItems(o.item);
                             const rating = o.rating || '⭐️ Не оценён';
                             const comment = o.rating_comment ? ` 📝 ${o.rating_comment}` : '';
-                            html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating}${comment}`;
+                            html += `<div class="order-item">${i+1}. ${o.item} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating}${comment}`;
                             if (o.status === '✅ Доставлен' && (!o.rating || o.rating === '⭐️ Не оценён')) {
                                 html += ` <button onclick="rateOrder(${data.orders.length - 1 - i})" style="background:#f1c40f; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">⭐️ Оценить</button>`;
                             }
@@ -318,31 +345,6 @@
             } catch (e) {
                 list.innerHTML = '<div class="empty-msg">❌ Ошибка загрузки заказов</div>';
             }
-        }
-
-        function formatOrderItems(itemText) {
-            if (!itemText) return '';
-            const items = itemText.split('\n').filter(s => s.trim());
-            const grouped = {};
-            items.forEach(item => {
-                const clean = item.replace('• ', '').trim();
-                const priceMatch = clean.match(/(\d+)/);
-                const price = priceMatch ? parseInt(priceMatch[0]) : 0;
-                const name = clean.replace(/— \d+.*/, '').trim();
-                if (!name) return;
-                if (!grouped[name]) grouped[name] = { name, price, count: 0 };
-                grouped[name].count += 1;
-            });
-            let result = [];
-            for (const key in grouped) {
-                const g = grouped[key];
-                if (g.count > 1) {
-                    result.push(`${g.name} x${g.count}`);
-                } else {
-                    result.push(g.name);
-                }
-            }
-            return result.join(', ');
         }
 
         async function rateOrder(orderIndex) {
