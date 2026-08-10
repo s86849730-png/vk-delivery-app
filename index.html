@@ -106,6 +106,15 @@
             <input type="text" id="address" placeholder="📍 Адрес доставки">
             <input type="tel" id="phone" placeholder="📞 Телефон для связи">
             <textarea id="order-comment" rows="2" placeholder="📝 Комментарий к заказу (необязательно)"></textarea>
+            <div style="margin: 10px 0; font-size: 14px;">
+    <label>
+        <input type="checkbox" id="consentCheckbox" checked>
+        Я согласен на обработку персональных данных в соответствии с
+        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank" style="color:#667eea;">
+            политикой конфиденциальности
+        </a>
+    </label>
+</div>
             <button onclick="sendOrder()">✅ Оформить заказ</button>
             <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
             <button onclick="getOrders()" class="btn-orders">📋 Мои заказы</button>
@@ -235,6 +244,15 @@
             const address = document.getElementById('address').value;
             const phone = document.getElementById('phone').value;
             const comment = document.getElementById('order-comment').value;
+            
+            const consent = document.getElementById('consentCheckbox').checked;
+            if (!consent) {
+                document.getElementById('status').innerText = '❌ Необходимо дать согласие на обработку данных.';
+                return;
+        }
+        // сохраняем согласие в браузере
+        localStorage.setItem('consentGiven', 'true');
+
             if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
             if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
             if (!phone) { document.getElementById('status').innerText = '❌ Введите телефон'; return; }
