@@ -198,31 +198,58 @@
         }
 
         function showShopMenu(shopId) {
-            currentShopId = shopId;
-            const shop = shopsData.shops.find(s => s.id === shopId);
-            if (!shop) return;
+	    const shop = shopsData.shops.find(s => s.id === shopId);
+	    if (!shop) return;
 
-            document.getElementById('shopList').style.display = 'none';
-            const container = document.getElementById('menuContainer');
-            container.classList.add('active');
+	    document.getElementById('shopList').style.display = 'none';
+	    const container = document.getElementById('menuContainer');
+	    container.classList.add('active');
 
-            const menuDiv = document.getElementById('menu');
-            menuDiv.innerHTML = '';
-            if (shop.items && shop.items.length > 0) {
-                shop.items.forEach(item => {
-                    const weight = item.weight || 0;
-                    const div = document.createElement('div');
-                    div.className = 'menu-item';
-                    div.innerHTML = `
-                        <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
-                        <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
-                    `;
-                    menuDiv.appendChild(div);
-                });
-            } else {
-                menuDiv.innerHTML = '<p style="text-align:center;color:#888;">Товары отсутствуют</p>';
-            }
-        }
+	    const menuDiv = document.getElementById('menu');
+	    menuDiv.innerHTML = '';
+
+	    // Группируем товары по категориям
+	    const categories = {};
+	    shop.items.forEach(item => {
+	        const cat = item.category || 'Другое';
+	        if (!categories[cat]) categories[cat] = [];
+	        categories[cat].push(item);
+	    });
+
+	    // Если категорий нет — просто выводим все товары
+	    if (Object.keys(categories).length === 0) {
+	        shop.items.forEach(item => {
+	            const weight = item.weight || 0;
+	            const div = document.createElement('div');
+	            div.className = 'menu-item';
+	            div.innerHTML = `
+	                <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
+	                <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
+	            `;
+	            menuDiv.appendChild(div);
+	        });
+	        return;
+	    }
+
+	    // Выводим категории
+	    for (const [cat, items] of Object.entries(categories)) {
+	        const catTitle = document.createElement('div');
+	        catTitle.style.cssText = 'font-weight:bold; margin:12px 0 6px; color:#333;';
+	        catTitle.innerText = `📂 ${cat}`;
+	        menuDiv.appendChild(catTitle);
+
+	        items.forEach(item => {
+	            const weight = item.weight || 0;
+	            const div = document.createElement('div');
+	            div.className = 'menu-item';
+	            div.innerHTML = `
+	                <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
+	                <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
+	            `;
+	            menuDiv.appendChild(div);
+	        });
+	    }
+	}
 
         function hideMenu() {
             document.getElementById('shopList').style.display = 'flex';
