@@ -9,6 +9,32 @@
         body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
         .container { max-width: 400px; margin: 0 auto; }
         h1 { text-align: center; color: #333; }
+        .shop-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+        .shop-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .shop-card:active { background: #f0f0f0; }
+        .shop-card .shop-name { font-weight: bold; font-size: 16px; }
+        .shop-card .shop-arrow { font-size: 18px; color: #888; }
+        .menu-container { display: none; margin-top: 16px; }
+        .menu-container.active { display: block; }
+        .back-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            padding: 0;
+        }
         .menu-item {
             background: white;
             border-radius: 12px;
@@ -55,7 +81,6 @@
             cursor: pointer;
         }
         .cart .btn-secondary { background: #6c5ce7; margin-top: 8px; }
-        .cart .btn-orders { background: #e17055; margin-top: 8px; }
         .cart .btn-support { background: #fdcb6e; margin-top: 8px; color: #333; }
         .cart .btn-refresh { background: #00b894; margin-top: 8px; }
         .status-text { text-align: center; margin-top: 10px; font-size: 14px; color: #555; }
@@ -87,7 +112,9 @@
         .delivery-fee { color: #666; font-size: 13px; margin-top: 4px; }
         .weight-warning { color: #e74c3c; font-weight: bold; margin-top: 6px; }
         .item-weight { font-size: 12px; color: #888; }
-        .completed-section .order-item { font-size: 13px; }
+        .consent-checkbox { margin: 10px 0; font-size: 14px; }
+        .consent-checkbox a { color: #667eea; }
+        .rating-btn { background: #f1c40f; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -95,7 +122,16 @@
     <div id="app" class="container hidden">
         <h1>🚀 DoSHtavKa</h1>
         <p style="text-align:center; color:#555;">Доставка из Бородино</p>
-        <div id="menu"></div>
+
+        <!-- Список магазинов -->
+        <div id="shopList" class="shop-list"></div>
+
+        <!-- Контейнер для товаров магазина (скрыт по умолчанию) -->
+        <div id="menuContainer" class="menu-container">
+            <button class="back-btn" onclick="hideMenu()">← Назад к магазинам</button>
+            <div id="menu"></div>
+        </div>
+
         <div class="cart">
             <h3>🛒 Корзина</h3>
             <div id="cart-items">Товаров: 0</div>
@@ -106,18 +142,15 @@
             <input type="text" id="address" placeholder="📍 Адрес доставки">
             <input type="tel" id="phone" placeholder="📞 Телефон для связи">
             <textarea id="order-comment" rows="2" placeholder="📝 Комментарий к заказу (необязательно)"></textarea>
-            <div style="margin: 10px 0; font-size: 14px;">
-    <label>
-        <input type="checkbox" id="consentCheckbox">
-        Я согласен на обработку персональных данных в соответствии с
-        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank" style="color:#667eea;">
-            политикой конфиденциальности
-        </a>
-    </label>
-</div>
+            <div class="consent-checkbox">
+                <label>
+                    <input type="checkbox" id="consentCheckbox">
+                    Я согласен на обработку персональных данных в соответствии с
+                    <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">политикой конфиденциальности</a>
+                </label>
+            </div>
             <button onclick="sendOrder()">✅ Оформить заказ</button>
             <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
-            <button onclick="getOrders()" class="btn-orders">📋 Мои заказы</button>
             <button onclick="refreshOrders()" class="btn-refresh">🔄 Обновить</button>
             <button onclick="showSupport()" class="btn-support">🆘 Поддержка</button>
             <div id="status" class="status-text"></div>
@@ -126,44 +159,75 @@
                 <button onclick="sendSupport()">📤 Отправить</button>
                 <button onclick="hideSupport()" class="btn-secondary">❌ Отмена</button>
             </div>
-            <div id="orders-list" class="orders-list hidden"><div class="empty-msg">Нажмите «Мои заказы», чтобы увидеть список</div></div>
+            <div id="orders-list" class="orders-list hidden">
+                <div class="empty-msg">Загрузка заказов...</div>
+            </div>
         </div>
     </div>
+
     <script>
         const API_BASE = 'https://accessory-pound-ada-produced.trycloudflare.com';
         let cart = [];
         let userId = 123456789;
         let shopsData = null;
+        let currentShopId = null;
 
         async function loadShops() {
             try {
                 const res = await fetch(`${API_BASE}/api/shops`);
                 shopsData = await res.json();
-                const menu = document.getElementById('menu');
-                menu.innerHTML = '';
+                const shopList = document.getElementById('shopList');
+                shopList.innerHTML = '';
                 if (shopsData.shops && shopsData.shops.length > 0) {
                     shopsData.shops.forEach(shop => {
-                        const shopTitle = document.createElement('div');
-                        shopTitle.style.cssText = 'font-weight:bold; margin:12px 0 6px; color:#333;';
-                        shopTitle.innerText = '🏪 ' + shop.name;
-                        menu.appendChild(shopTitle);
-                        shop.items.forEach(item => {
-                            const weight = item.weight || 0;
-                            const div = document.createElement('div');
-                            div.className = 'menu-item';
-                            div.innerHTML = `
-                                <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
-                                <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
-                            `;
-                            menu.appendChild(div);
-                        });
+                        const card = document.createElement('div');
+                        card.className = 'shop-card';
+                        card.innerHTML = `
+                            <span class="shop-name">🏪 ${shop.name}</span>
+                            <span class="shop-arrow">→</span>
+                        `;
+                        card.onclick = () => showShopMenu(shop.id);
+                        shopList.appendChild(card);
                     });
                 } else {
-                    menu.innerHTML = '<p style="text-align:center;color:#888;">Меню пока пусто. Загляните позже!</p>';
+                    shopList.innerHTML = '<p style="text-align:center;color:#888;">Нет магазинов. Загляните позже!</p>';
                 }
             } catch (e) {
-                document.getElementById('menu').innerHTML = '<p style="text-align:center;color:#e74c3c;">❌ Ошибка загрузки меню</p>';
+                document.getElementById('shopList').innerHTML = '<p style="text-align:center;color:#e74c3c;">❌ Ошибка загрузки магазинов</p>';
             }
+        }
+
+        function showShopMenu(shopId) {
+            currentShopId = shopId;
+            const shop = shopsData.shops.find(s => s.id === shopId);
+            if (!shop) return;
+
+            document.getElementById('shopList').style.display = 'none';
+            const container = document.getElementById('menuContainer');
+            container.classList.add('active');
+
+            const menuDiv = document.getElementById('menu');
+            menuDiv.innerHTML = '';
+            if (shop.items && shop.items.length > 0) {
+                shop.items.forEach(item => {
+                    const weight = item.weight || 0;
+                    const div = document.createElement('div');
+                    div.className = 'menu-item';
+                    div.innerHTML = `
+                        <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
+                        <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
+                    `;
+                    menuDiv.appendChild(div);
+                });
+            } else {
+                menuDiv.innerHTML = '<p style="text-align:center;color:#888;">Товары отсутствуют</p>';
+            }
+        }
+
+        function hideMenu() {
+            document.getElementById('shopList').style.display = 'flex';
+            document.getElementById('menuContainer').classList.remove('active');
+            currentShopId = null;
         }
 
         function addToCart(shop, item, weight) {
@@ -244,14 +308,13 @@
             const address = document.getElementById('address').value;
             const phone = document.getElementById('phone').value;
             const comment = document.getElementById('order-comment').value;
-            
+
             const consent = document.getElementById('consentCheckbox').checked;
             if (!consent) {
                 document.getElementById('status').innerText = '❌ Необходимо дать согласие на обработку данных.';
                 return;
-        }
-        // сохраняем согласие в браузере
-        localStorage.setItem('consentGiven', 'true');
+            }
+            localStorage.setItem('consentGiven', 'true');
 
             if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
             if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
@@ -354,8 +417,14 @@
                         completed.forEach((o, i) => {
                             const items = formatOrderItems(o.item);
                             const rating = o.rating || '⭐️ Не оценён';
+                            const comment = o.rating_comment ? ` 📝 ${o.rating_comment}` : '';
                             const weight = o.total_weight || 0;
-                            html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating} | Вес: ${weight} кг</div>`;
+                            html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating}${comment} | Вес: ${weight} кг`;
+                            if (o.status === '✅ Доставлен' && (!o.rating || o.rating === '⭐️ Не оценён')) {
+                                const idx = data.orders.length - 1 - i; // правильный индекс для rateOrder
+                                html += ` <button class="rating-btn" onclick="rateOrder(${idx})">⭐️ Оценить</button>`;
+                            }
+                            html += `</div>`;
                         });
                         html += `</div>`;
                     }
@@ -378,7 +447,6 @@
             }
             items = items.map(s => s.replace(/[•🛒Корзина:]/g, '').trim()).filter(s => s);
 
-            // Извлекаем названия (убираем цену)
             const names = items.map(item => {
                 const match = item.match(/^(.*?)\s*[—\-]/);
                 return match ? match[1].trim() : item;
@@ -402,6 +470,30 @@
             return result.join(', ');
         }
 
+        async function rateOrder(orderIndex) {
+            const rating = prompt('Оцените заказ от 1 до 5:', '5');
+            if (!rating || rating < 1 || rating > 5) {
+                alert('Пожалуйста, введите число от 1 до 5');
+                return;
+            }
+            const comment = prompt('Оставьте комментарий (необязательно):', '');
+            try {
+                const response = await fetch(`${API_BASE}/api/rate_order/${orderIndex}/${rating}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment: comment || '' })
+                });
+                if (response.ok) {
+                    alert('Спасибо за оценку!');
+                    getOrders(); // обновляем список
+                } else {
+                    alert('Ошибка отправки оценки');
+                }
+            } catch (e) {
+                alert('Ошибка соединения');
+            }
+        }
+
         function showSupport() {
             document.getElementById('support-form').classList.remove('hidden');
         }
@@ -413,20 +505,20 @@
         async function sendSupport() {
             const msg = document.getElementById('support-message').value;
             if (!msg) { alert('Напишите сообщение'); return; }
-            try {
-                await fetch(`${API_BASE}/api/support`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, username: 'vk_user', message: msg })
-                });
-                document.getElementById('support-message').value = '';
-                hideSupport();
-                document.getElementById('status').innerText = '✅ Сообщение отправлено в поддержку!';
-            } catch (e) {
-                document.getElementById('status').innerText = '❌ Ошибка отправки';
-            }
+            alert('Функция поддержки временно недоступна. Скоро исправим!');
+            document.getElementById('support-message').value = '';
+            hideSupport();
         }
 
+        // Восстановление согласия
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedConsent = localStorage.getItem('consentGiven');
+            if (savedConsent === 'true') {
+                document.getElementById('consentCheckbox').checked = true;
+            }
+        });
+
+        // Инициализация VK Bridge
         if (typeof vkBridge !== 'undefined') {
             vkBridge.send('VKWebAppInit', {})
                 .then(() => {
@@ -437,13 +529,17 @@
                     getOrders();
                 })
                 .catch(e => console.error('❌ Init error', e));
+        } else {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            loadShops();
+            getOrders();
         }
     </script>
+
     <!-- Политика конфиденциальности -->
     <div style="text-align:center; padding:16px 0 20px 0; font-size:12px; color:#888;">
-        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" 
-           target="_blank" 
-           style="color:#667eea; text-decoration:none;">
+        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank" style="color:#667eea; text-decoration:none;">
             Политика конфиденциальности
         </a>
     </div>
