@@ -198,58 +198,58 @@
         }
 
         function showShopMenu(shopId) {
-	    const shop = shopsData.shops.find(s => s.id === shopId);
-	    if (!shop) return;
+            currentShopId = shopId;
+            const shop = shopsData.shops.find(s => s.id === shopId);
+            if (!shop) return;
 
-	    document.getElementById('shopList').style.display = 'none';
-	    const container = document.getElementById('menuContainer');
-	    container.classList.add('active');
+            document.getElementById('shopList').style.display = 'none';
+            const container = document.getElementById('menuContainer');
+            container.classList.add('active');
 
-	    const menuDiv = document.getElementById('menu');
-	    menuDiv.innerHTML = '';
+            const menuDiv = document.getElementById('menu');
+            menuDiv.innerHTML = '';
 
-	    // Группируем товары по категориям
-	    const categories = {};
-	    shop.items.forEach(item => {
-	        const cat = item.category || 'Другое';
-	        if (!categories[cat]) categories[cat] = [];
-	        categories[cat].push(item);
-	    });
+            // Группируем товары по категориям
+            const categories = {};
+            shop.items.forEach(item => {
+                const cat = item.category || 'Другое';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(item);
+            });
 
-	    // Если категорий нет — просто выводим все товары
-	    if (Object.keys(categories).length === 0) {
-	        shop.items.forEach(item => {
-	            const weight = item.weight || 0;
-	            const div = document.createElement('div');
-	            div.className = 'menu-item';
-	            div.innerHTML = `
-	                <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
-	                <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
-	            `;
-	            menuDiv.appendChild(div);
-	        });
-	        return;
-	    }
+            // Если категорий нет — просто выводим все товары
+            if (Object.keys(categories).length === 0) {
+                shop.items.forEach(item => {
+                    const weight = item.weight || 0;
+                    const div = document.createElement('div');
+                    div.className = 'menu-item';
+                    div.innerHTML = `
+                        <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
+                        <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
+                    `;
+                    menuDiv.appendChild(div);
+                });
+                return;
+            }
 
-	    // Выводим категории
-	    for (const [cat, items] of Object.entries(categories)) {
-	        const catTitle = document.createElement('div');
-	        catTitle.style.cssText = 'font-weight:bold; margin:12px 0 6px; color:#333;';
-	        catTitle.innerText = `📂 ${cat}`;
-	        menuDiv.appendChild(catTitle);
+            for (const [cat, items] of Object.entries(categories)) {
+                const catTitle = document.createElement('div');
+                catTitle.style.cssText = 'font-weight:bold; margin:12px 0 6px; color:#333;';
+                catTitle.innerText = `📂 ${cat}`;
+                menuDiv.appendChild(catTitle);
 
-	        items.forEach(item => {
-	            const weight = item.weight || 0;
-	            const div = document.createElement('div');
-	            div.className = 'menu-item';
-	            div.innerHTML = `
-	                <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
-	                <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
-	            `;
-	            menuDiv.appendChild(div);
-	        });
-	    }
-	}
+                items.forEach(item => {
+                    const weight = item.weight || 0;
+                    const div = document.createElement('div');
+                    div.className = 'menu-item';
+                    div.innerHTML = `
+                        <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
+                        <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
+                    `;
+                    menuDiv.appendChild(div);
+                });
+            }
+        }
 
         function hideMenu() {
             document.getElementById('shopList').style.display = 'flex';
@@ -447,8 +447,9 @@
                             const comment = o.rating_comment ? ` 📝 ${o.rating_comment}` : '';
                             const weight = o.total_weight || 0;
                             html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating}${comment} | Вес: ${weight} кг`;
-                            if (o.status === '✅ Доставлен' && (!o.rating || o.rating === '⭐ Не оценён')) {
-                                html += ` <button class="rating-btn" onclick="rateOrder(${o.order_id})">⭐ Оценить</button>`;
+                            // Используем order_id вместо индекса
+                            if (o.status === '✅ Доставлен' && (!o.rating || o.rating === '⭐️ Не оценён')) {
+                                html += ` <button class="rating-btn" onclick="rateOrder(${o.order_id})">⭐️ Оценить</button>`;
                             }
                             html += `</div>`;
                         });
@@ -496,29 +497,29 @@
             return result.join(', ');
         }
 
-	async function rateOrder(orderId) {
-	    const rating = prompt('Оцените заказ от 1 до 5:', '5');
-	    if (!rating || rating < 1 || rating > 5) {
-	        alert('Пожалуйста, введите число от 1 до 5');
-	        return;
-	    }
-	    const comment = prompt('Оставьте комментарий (необязательно):', '');
-	    try {
-	        const response = await fetch(`${API_BASE}/api/rate_order/${orderId}/${rating}`, {
-	            method: 'POST',
-	            headers: { 'Content-Type': 'application/json' },
-	            body: JSON.stringify({ comment: comment || '' })
-	        });
-	        if (response.ok) {
-	            alert('Спасибо за оценку!');
-	            getOrders();
-	        } else {
-	            alert('Ошибка отправки оценки');
-	        }
-	    } catch (e) {
-	        alert('Ошибка соединения');
-	    }
-	}
+        async function rateOrder(orderId) {
+            const rating = prompt('Оцените заказ от 1 до 5:', '5');
+            if (!rating || rating < 1 || rating > 5) {
+                alert('Пожалуйста, введите число от 1 до 5');
+                return;
+            }
+            const comment = prompt('Оставьте комментарий (необязательно):', '');
+            try {
+                const response = await fetch(`${API_BASE}/api/rate_order/${orderId}/${rating}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment: comment || '' })
+                });
+                if (response.ok) {
+                    alert('Спасибо за оценку!');
+                    getOrders();
+                } else {
+                    alert('Ошибка отправки оценки');
+                }
+            } catch (e) {
+                alert('Ошибка соединения');
+            }
+        }
 
         function showSupport() {
             document.getElementById('support-form').classList.remove('hidden');
@@ -531,9 +532,18 @@
         async function sendSupport() {
             const msg = document.getElementById('support-message').value;
             if (!msg) { alert('Напишите сообщение'); return; }
-            alert('Функция поддержки временно недоступна. Скоро исправим!');
-            document.getElementById('support-message').value = '';
-            hideSupport();
+            try {
+                await fetch(`${API_BASE}/api/support`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, username: 'vk_user', message: msg })
+                });
+                document.getElementById('support-message').value = '';
+                hideSupport();
+                document.getElementById('status').innerText = '✅ Сообщение отправлено в поддержку!';
+            } catch (e) {
+                document.getElementById('status').innerText = '❌ Ошибка отправки';
+            }
         }
 
         // Восстановление согласия
