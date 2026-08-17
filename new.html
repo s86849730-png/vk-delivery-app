@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoSHtavKa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f5f5f5; padding: 16px; color: #1a1a1a; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .header { text-align: center; padding: 16px 0; }
+        .header h1 { font-size: 24px; color: #2d7d46; }
+        .header p { color: #666; font-size: 14px; margin-top: 4px; }
+        .btn { display: block; width: 100%; padding: 12px; background: #2d7d46; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn:active { opacity: 0.8; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2d7d46; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .tab-bar { display: flex; margin-bottom: 16px; border-radius: 12px; overflow: hidden; background: #e8e8e8; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; cursor: pointer; }
+        .tab.active { background: #2d7d46; color: white; }
+        .tab:not(.active) { background: #e8e8e8; color: #666; }
+        .hidden { display: none; }
+        .order-card { background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #2d7d46; }
+        .order-card .header-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .order-card .order-id { font-weight: 700; }
+        .order-card .order-date { color: #888; font-size: 12px; }
+        .order-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+        .status-waiting { background: #fff3cd; color: #856404; }
+        .status-accepted { background: #cce5ff; color: #004085; }
+        .status-delivering { background: #d1ecf1; color: #0c5460; }
+        .status-delivered { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
+        .toast.show { opacity: 1; }
+        .loading { text-align: center; color: #888; padding: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ DoSHtavKa</h1>
+            <p>Доставка еды в Бородино</p>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab active" data-tab="order" onclick="switchTab('order')">📝 Заказать</div>
+            <div class="tab" data-tab="history" onclick="switchTab('history')">📋 История</div>
+            <div class="tab" data-tab="status" onclick="switchTab('status')">📊 Статус</div>
+        </div>
+
+        <div id="tab-order">
+            <div class="card">
+                <div class="form-group"><label>Название магазина</label><input type="text" id="shop" placeholder="Вкусный Ланч"></div>
+                <div class="form-group"><label>Что заказать?</label><textarea id="items" placeholder="2 лаваша с мясом, 1 с сыром"></textarea></div>
+                <div class="form-group"><label>Адрес доставки</label><input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12"></div>
+                <div class="form-group"><label>Телефон</label><input type="text" id="phone" placeholder="+7 999 111 22 33"></div>
+                <div class="form-group"><label>Ваше имя</label><input type="text" id="name" placeholder="Алексей"></div>
+                <button class="btn" onclick="createOrder()">📤 Отправить заявку</button>
+            </div>
+        </div>
+
+        <div id="tab-history" class="hidden">
+            <div class="card" id="history-container"><div class="loading">Загрузка...</div></div>
+        </div>
+
+        <div id="tab-status" class="hidden">
+            <div class="card" id="status-container"><div class="loading">Загрузка...</div></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const API_BASE = 'https://messenger-geneva-hung-liable.trycloudflare.com';
+        
+        function getUserId() {
+            const match = window.location.search.match(/[?&]vk_user_id=([^&]+)/);
+            if (match) return parseInt(match[1]);
+            return 123456789;
+        }
+
+        const USER_ID = getUserId();
+        console.log('✅ User ID:', USER_ID);
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById('tab-order').classList.add('hidden');
+            document.getElementById('tab-history').classList.add('hidden');
+            document.getElementById('tab-status').classList.add('hidden');
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            if (tab === 'history') loadHistory();
+            if (tab === 'status') loadStatus();
+        }
+
+        async function createOrder() {
+            const shop = document.getElementById('shop').value.trim();
+            const items = document.getElementById('items').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const name = document.getElementById('name').value.trim();
+
+            if (!shop || !items || !address || !phone || !name) {
+                showToast('❌ Заполните все поля');
+                return;
+            }
+
+            try {
+                showToast('⏳ Отправка...');
+                const res = await fetch(`${API_BASE}/api/vk_order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: USER_ID, username: 'vk_user', name, shop, items, address, phone, comment: '' })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ Заявка отправлена! Номер: ' + data.order_id);
+                    document.getElementById('shop').value = '';
+                    document.getElementById('items').value = '';
+                    document.getElementById('address').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('name').value = '';
+                    loadStatus();
+                } else {
+                    showToast('❌ Ошибка: ' + data.message);
+                }
+            } catch (e) {
+                showToast('❌ Ошибка сети: ' + e.message);
+            }
+        }
+
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+            container.innerHTML = '<div class="loading">Загрузка...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/api/user_orders/${USER_ID}`);
+                const data = await res.json();
+                if (data.orders && data.orders.length > 0) {
+                    let html = '';
+                    data.orders.forEach(o => {
+                        const statusClass = o.status.includes('Ожидает') ? 'status-waiting' :
+                                           o.status.includes('Принят') ? 'status-accepted' :
+                                           o.status.includes('В пути') ? 'status-delivering' :
+                                           o.status.includes('Доставлен') ? 'status-delivered' :
+                                           o.status.includes('Отклонён') ? 'status-rejected' : '';
+                        html += `
+                            <div class="order-card">
+                                <div class="header-row">
+                                    <span class="order-id">#${o.order_id}</span>
+                                    <span class="order-date">${new Date(o.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <div><b>${o.shop || 'Магазин'}</b>: ${o.items}</div>
+                                <div>📍 ${o.address}</div>
+                                <div><span class="order-status ${statusClass}">${o.status}</span></div>
+                                ${o.rating && o.rating !== '⭐️ Не оценён' ? `<div style="margin-top:4px; color:#f5a623;">${o.rating}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">📭 У вас пока нет заказов</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="text-align:center; color:#d32f2f; padding:20px 0;">❌ Ошибка загрузки</p>';
+            }
+        }
+
+        async function loadStatus() {
+            const container = document.getElementById('status-container');
+            container.innerHTML = '<div class="loading">Загрузка...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/api/order_status/${USER_ID}`);
+                const data = await res.json();
+                if (data.status && data.status !== 'У вас пока нет заказов') {
+                    const color = data.status.includes('Ожидает') ? '#856404' :
+                                 data.status.includes('Принят') ? '#004085' :
+                                 data.status.includes('В пути') ? '#0c5460' :
+                                 data.status.includes('Доставлен') ? '#155724' :
+                                 data.status.includes('Отклонён') ? '#721c24' : '#666';
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:20px 0;">
+                            <div style="font-size:48px;">📦</div>
+                            <div style="font-size:20px; font-weight:600;">Статус заказа</div>
+                            <div style="margin-top:12px; display:inline-block; padding:8px 24px; border-radius:20px; background:${color}; color:white; font-weight:600;">${data.status}</div>
+                            <div style="margin-top:12px; color:#888; font-size:13px;">Обновление каждые 30 секунд</div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">📭 У вас пока нет активных заказов</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="text-align:center; color:#d32f2f; padding:20px 0;">❌ Ошибка загрузки</p>';
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        setInterval(() => {
+            if (!document.getElementById('tab-status').classList.contains('hidden')) loadStatus();
+            if (!document.getElementById('tab-history').classList.contains('hidden')) loadHistory();
+        }, 30000);
+
+        switchTab('order');
+        console.log('✅ DoSHtavKa v2 загружен!');
+    </script>
+</body>
+</html>
