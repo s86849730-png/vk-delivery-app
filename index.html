@@ -3,581 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DoSHtavKa — Доставка</title>
-    <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@latest/dist/browser.min.js"></script>
+    <title>DoSHtavKa — Доставка еды</title>
+    <script type="text/javascript" src="https://vk.com/js/api/openapi.js?169"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 16px; background: #f5f7fa; margin: 0; }
-        .container { max-width: 400px; margin: 0 auto; }
-        h1 { text-align: center; color: #333; }
-        .shop-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
-        .shop-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .shop-card:active { background: #f0f0f0; }
-        .shop-card .shop-name { font-weight: bold; font-size: 16px; }
-        .shop-card .shop-arrow { font-size: 18px; color: #888; }
-        .menu-container { display: none; margin-top: 16px; }
-        .menu-container.active { display: block; }
-        .back-btn {
-            background: none;
-            border: none;
-            color: #667eea;
-            font-size: 14px;
-            cursor: pointer;
-            margin-bottom: 12px;
-            padding: 0;
-        }
-        .menu-item {
-            background: white;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .menu-item button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .cart {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        .cart input, .cart textarea {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 14px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-        }
-        .cart button {
-            width: 100%;
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .cart .btn-secondary { background: #6c5ce7; margin-top: 8px; }
-        .cart .btn-support { background: #fdcb6e; margin-top: 8px; color: #333; }
-        .cart .btn-refresh { background: #00b894; margin-top: 8px; }
-        .status-text { text-align: center; margin-top: 10px; font-size: 14px; color: #555; }
-        .loading { text-align: center; font-size: 18px; padding: 40px; color: #888; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f5f5f5; padding: 16px; color: #1a1a1a; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .header { text-align: center; padding: 16px 0; }
+        .header h1 { font-size: 24px; color: #2d7d46; }
+        .header p { color: #666; font-size: 14px; margin-top: 4px; }
+        .btn { display: inline-block; padding: 12px 24px; background: #2d7d46; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.8; }
+        .btn-secondary { background: #e8f5e9; color: #2d7d46; }
+        .order-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .order-item:last-child { border-bottom: none; }
+        .order-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+        .status-waiting { background: #fff3cd; color: #856404; }
+        .status-accepted { background: #cce5ff; color: #004085; }
+        .status-delivering { background: #d1ecf1; color: #0c5460; }
+        .status-delivered { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; transition: border 0.2s; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2d7d46; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .tab-bar { display: flex; margin-bottom: 16px; border-radius: 12px; overflow: hidden; background: #e8e8e8; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .tab.active { background: #2d7d46; color: white; }
+        .tab:not(.active) { background: #e8e8e8; color: #666; }
         .hidden { display: none; }
-        .orders-list {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #333;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .orders-list .order-item { padding: 6px 0; border-bottom: 1px solid #eee; }
-        .orders-list .order-item:last-child { border-bottom: none; }
-        .orders-list .active-section { border-left: 3px solid #fdcb6e; padding-left: 10px; margin-bottom: 8px; }
-        .orders-list .completed-section { border-left: 3px solid #00b894; padding-left: 10px; }
-        .orders-list .empty-msg { color: #888; text-align: center; padding: 12px 0; }
-        .cart-items-detail { font-size: 14px; color: #555; margin: 6px 0; }
-        .cart-items-detail .shop-name { font-weight: bold; color: #333; }
-        .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
-        .cart-item-row .remove-btn { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
-        .support-form { margin-top: 10px; }
-        .support-form textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; box-sizing: border-box; }
-        .support-form button { margin-top: 8px; }
-        .cart-total { font-weight: bold; margin-top: 8px; color: #333; }
-        .delivery-fee { color: #666; font-size: 13px; margin-top: 4px; }
-        .weight-warning { color: #e74c3c; font-weight: bold; margin-top: 6px; }
-        .item-weight { font-size: 12px; color: #888; }
-        .consent-checkbox { margin: 10px 0; font-size: 14px; }
-        .consent-checkbox a { color: #667eea; }
-        .rating-btn { background: #f1c40f; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; }
+        .rating-stars { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
+        .rating-stars button { font-size: 32px; background: none; border: none; cursor: pointer; transition: transform 0.2s; }
+        .rating-stars button:active { transform: scale(1.2); }
+        .order-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .order-card .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .order-card .order-id { font-weight: 700; font-size: 16px; }
+        .order-card .order-date { color: #888; font-size: 12px; }
+        .order-card .order-items { color: #333; font-size: 14px; margin: 4px 0; }
+        .order-card .order-address { color: #666; font-size: 13px; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
     </style>
 </head>
 <body>
-    <div id="loading" class="loading">⏳ Загрузка...</div>
-    <div id="app" class="container hidden">
-        <h1>🚀 DoSHtavKa</h1>
-        <p style="text-align:center; color:#555;">Доставка из Бородино</p>
-
-        <!-- Список магазинов -->
-        <div id="shopList" class="shop-list"></div>
-
-        <!-- Контейнер для товаров магазина (скрыт по умолчанию) -->
-        <div id="menuContainer" class="menu-container">
-            <button class="back-btn" onclick="hideMenu()">← Назад к магазинам</button>
-            <div id="menu"></div>
+    <div class="container" id="app">
+        <div class="header">
+            <h1>🍽️ DoSHtavKa</h1>
+            <p>Доставка еды в Бородино</p>
         </div>
 
-        <div class="cart">
-            <h3>🛒 Корзина</h3>
-            <div id="cart-items">Товаров: 0</div>
-            <div id="cart-details" class="cart-items-detail"></div>
-            <div id="cart-total" class="cart-total">💰 Итого: 0 ₽</div>
-            <div id="delivery-fee" class="delivery-fee">🚚 Доставка: 150 ₽</div>
-            <div id="weight-display" class="weight-warning" style="display:none;"></div>
-            <input type="text" id="address" placeholder="📍 Адрес доставки">
-            <input type="tel" id="phone" placeholder="📞 Телефон для связи">
-            <textarea id="order-comment" rows="2" placeholder="📝 Комментарий к заказу (необязательно)"></textarea>
-            <div class="consent-checkbox">
-                <label>
-                    <input type="checkbox" id="consentCheckbox">
-                    Я согласен на обработку персональных данных в соответствии с
-                    <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">политикой конфиденциальности</a>
-                </label>
+        <div class="tab-bar">
+            <div class="tab active" data-tab="order" onclick="switchTab('order')">📝 Заказать</div>
+            <div class="tab" data-tab="history" onclick="switchTab('history')">📋 История</div>
+            <div class="tab" data-tab="status" onclick="switchTab('status')">📊 Статус</div>
+        </div>
+
+        <!-- Вкладка "Заказать" -->
+        <div id="tab-order" class="tab-content">
+            <div class="card">
+                <div class="form-group">
+                    <label>Название магазина</label>
+                    <input type="text" id="shop" placeholder="Например: Вкусный Ланч">
+                </div>
+                <div class="form-group">
+                    <label>Что заказать?</label>
+                    <textarea id="items" placeholder="Опишите блюда и количество"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Адрес доставки</label>
+                    <input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12">
+                </div>
+                <div class="form-group">
+                    <label>Телефон</label>
+                    <input type="text" id="phone" placeholder="+7 999 111 22 33">
+                </div>
+                <div class="form-group">
+                    <label>Ваше имя</label>
+                    <input type="text" id="name" placeholder="Алексей">
+                </div>
+                <button class="btn" onclick="createOrder()">📤 Отправить заявку</button>
             </div>
-            <button onclick="sendOrder()">✅ Оформить заказ</button>
-            <button onclick="checkStatus()" class="btn-secondary">📋 Узнать статус последнего заказа</button>
-            <button onclick="refreshOrders()" class="btn-refresh">🔄 Обновить</button>
-            <button onclick="showSupport()" class="btn-support">🆘 Поддержка</button>
-            <div id="status" class="status-text"></div>
-            <div id="support-form" class="support-form hidden">
-                <textarea id="support-message" rows="3" placeholder="Опишите вашу проблему..."></textarea>
-                <button onclick="sendSupport()">📤 Отправить</button>
-                <button onclick="hideSupport()" class="btn-secondary">❌ Отмена</button>
+            <div class="card" style="background:#e8f5e9; border-left: 4px solid #2d7d46;">
+                <p style="font-size:13px; color:#2d7d46;">
+                    📌 После отправки заявки мы свяжемся с вами в ближайшее время.<br>
+                    ⏳ Статус заказа можно посмотреть во вкладке «Статус».
+                </p>
             </div>
-            <div id="orders-list" class="orders-list hidden">
-                <div class="empty-msg">Загрузка заказов...</div>
+        </div>
+
+        <!-- Вкладка "История" -->
+        <div id="tab-history" class="tab-content hidden">
+            <div class="card" id="history-container">
+                <p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>
+            </div>
+        </div>
+
+        <!-- Вкладка "Статус" -->
+        <div id="tab-status" class="tab-content hidden">
+            <div class="card" id="status-container">
+                <p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>
+            </div>
+        </div>
+
+        <!-- Вкладка "Оценка" (появляется после доставки) -->
+        <div id="tab-rating" class="tab-content hidden">
+            <div class="card" id="rating-container">
+                <h3 style="text-align:center; margin-bottom:16px;">⭐️ Оцените доставку</h3>
+                <div class="rating-stars" id="rating-stars">
+                    <button onclick="setRating(1)">⭐</button>
+                    <button onclick="setRating(2)">⭐</button>
+                    <button onclick="setRating(3)">⭐</button>
+                    <button onclick="setRating(4)">⭐</button>
+                    <button onclick="setRating(5)">⭐</button>
+                </div>
+                <div class="form-group">
+                    <label>Ваш отзыв</label>
+                    <textarea id="review-comment" placeholder="Напишите, что понравилось..."></textarea>
+                </div>
+                <button class="btn" onclick="submitRating()">📤 Отправить оценку</button>
             </div>
         </div>
     </div>
 
+    <div id="toast" class="toast"></div>
+
     <script>
+        // Конфигурация
         const API_BASE = 'https://quantities-technique-investments-college.trycloudflare.com';
-        let cart = [];
-        let userId = 123456789;
-        let shopsData = null;
-        let currentShopId = null;
+        let userId = null;
+        let selectedRating = 0;
+        let currentOrderId = null;
 
-        async function loadShops() {
-            try {
-                const res = await fetch(`${API_BASE}/api/shops`);
-                shopsData = await res.json();
-                const shopList = document.getElementById('shopList');
-                shopList.innerHTML = '';
-                if (shopsData.shops && shopsData.shops.length > 0) {
-                    shopsData.shops.forEach(shop => {
-                        const card = document.createElement('div');
-                        card.className = 'shop-card';
-                        card.innerHTML = `
-                            <span class="shop-name">🏪 ${shop.name}</span>
-                            <span class="shop-arrow">→</span>
-                        `;
-                        card.onclick = () => showShopMenu(shop.id);
-                        shopList.appendChild(card);
-                    });
-                } else {
-                    shopList.innerHTML = '<p style="text-align:center;color:#888;">Нет магазинов. Загляните позже!</p>';
-                }
-            } catch (e) {
-                document.getElementById('shopList').innerHTML = '<p style="text-align:center;color:#e74c3c;">❌ Ошибка загрузки магазинов</p>';
-            }
-        }
-
-        function showShopMenu(shopId) {
-            currentShopId = shopId;
-            const shop = shopsData.shops.find(s => s.id === shopId);
-            if (!shop) return;
-
-            document.getElementById('shopList').style.display = 'none';
-            const container = document.getElementById('menuContainer');
-            container.classList.add('active');
-
-            const menuDiv = document.getElementById('menu');
-            menuDiv.innerHTML = '';
-
-            // Группируем товары по категориям
-            const categories = {};
-            shop.items.forEach(item => {
-                const cat = item.category || 'Другое';
-                if (!categories[cat]) categories[cat] = [];
-                categories[cat].push(item);
-            });
-
-            // Если категорий нет — просто выводим все товары
-            if (Object.keys(categories).length === 0) {
-                shop.items.forEach(item => {
-                    const weight = item.weight || 0;
-                    const div = document.createElement('div');
-                    div.className = 'menu-item';
-                    div.innerHTML = `
-                        <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
-                        <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
-                    `;
-                    menuDiv.appendChild(div);
-                });
-                return;
-            }
-
-            for (const [cat, items] of Object.entries(categories)) {
-                const catTitle = document.createElement('div');
-                catTitle.style.cssText = 'font-weight:bold; margin:12px 0 6px; color:#333;';
-                catTitle.innerText = `📂 ${cat}`;
-                menuDiv.appendChild(catTitle);
-
-                items.forEach(item => {
-                    const weight = item.weight || 0;
-                    const div = document.createElement('div');
-                    div.className = 'menu-item';
-                    div.innerHTML = `
-                        <span>${item.name} — ${item.price}₽ <span class="item-weight">(${weight} кг)</span></span>
-                        <button onclick="addToCart('${shop.name}', '${item.name} — ${item.price}', ${weight})">+</button>
-                    `;
-                    menuDiv.appendChild(div);
-                });
-            }
-        }
-
-        function hideMenu() {
-            document.getElementById('shopList').style.display = 'flex';
-            document.getElementById('menuContainer').classList.remove('active');
-            currentShopId = null;
-        }
-
-        function addToCart(shop, item, weight) {
-            cart.push({ shop, name: item, weight: weight || 0 });
-            updateCartDisplay();
-        }
-
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            updateCartDisplay();
-        }
-
-        function updateCartDisplay() {
-            document.getElementById('cart-items').innerText = 'Товаров: ' + cart.length;
-            const details = document.getElementById('cart-details');
-            const totalElem = document.getElementById('cart-total');
-            const feeElem = document.getElementById('delivery-fee');
-            const weightElem = document.getElementById('weight-display');
-            
-            if (cart.length === 0) {
-                details.innerHTML = '';
-                totalElem.innerText = '💰 Итого: 0 ₽';
-                feeElem.innerText = '🚚 Доставка: 0 ₽';
-                weightElem.style.display = 'none';
-                return;
-            }
-            
-            const grouped = {};
-            let total = 0;
-            let totalWeight = 0;
-            cart.forEach((item, idx) => {
-                const priceMatch = item.name.match(/(\d+)/);
-                const price = priceMatch ? parseInt(priceMatch[0]) : 0;
-                total += price;
-                totalWeight += item.weight;
-                const key = item.shop + '|||' + item.name;
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        shop: item.shop,
-                        name: item.name,
-                        count: 0,
-                        price: price,
-                        weight: item.weight,
-                        indices: []
-                    };
-                }
-                grouped[key].count += 1;
-                grouped[key].indices.push(idx);
-            });
-            
-            let html = '';
-            let itemIndex = 0;
-            for (const key in grouped) {
-                const item = grouped[key];
-                const subtotal = item.price * item.count;
-                html += `<div class="cart-item-row">
-                    <span><span class="shop-name">${item.shop}</span>: ${item.name} x${item.count} = ${subtotal} ₽ (${item.weight * item.count} кг)</span>
-                    <button class="remove-btn" onclick="removeFromCart(${itemIndex})">✕</button>
-                </div>`;
-                itemIndex++;
-            }
-            details.innerHTML = html;
-            totalElem.innerText = `💰 Итого: ${total + 150} ₽ (вкл. доставку 150 ₽)`;
-            feeElem.innerText = `🚚 Доставка: 150 ₽`;
-            
-            if (totalWeight > 20) {
-                weightElem.style.display = 'block';
-                weightElem.innerText = `⚠️ Суммарный вес (${totalWeight.toFixed(1)} кг) превышает 20 кг! Уберите лишние товары.`;
-                weightElem.style.color = '#e74c3c';
+        // VK Bridge
+        VK.init({ apiId: 54689427 });
+        VK.Widgets.Auth.getUserInfo(function(data) {
+            if (data && data.id) {
+                userId = data.id;
+                loadHistory();
+                loadStatus();
             } else {
-                weightElem.style.display = 'block';
-                weightElem.innerText = `⚖️ Общий вес: ${totalWeight.toFixed(1)} кг (максимум 20 кг)`;
-                weightElem.style.color = '#2ecc71';
-            }
-        }
-
-        async function sendOrder() {
-            const address = document.getElementById('address').value;
-            const phone = document.getElementById('phone').value;
-            const comment = document.getElementById('order-comment').value;
-
-            const consent = document.getElementById('consentCheckbox').checked;
-            if (!consent) {
-                document.getElementById('status').innerText = '❌ Необходимо дать согласие на обработку данных.';
-                return;
-            }
-            localStorage.setItem('consentGiven', 'true');
-
-            if (cart.length === 0) { document.getElementById('status').innerText = '❌ Выберите товар'; return; }
-            if (!address) { document.getElementById('status').innerText = '❌ Введите адрес'; return; }
-            if (!phone) { document.getElementById('status').innerText = '❌ Введите телефон'; return; }
-
-            let totalWeight = 0;
-            cart.forEach(item => totalWeight += item.weight);
-            if (totalWeight > 20) {
-                document.getElementById('status').innerText = `❌ Суммарный вес (${totalWeight.toFixed(1)} кг) превышает 20 кг. Уберите лишние товары.`;
-                return;
-            }
-
-            const grouped = {};
-            cart.forEach(item => {
-                if (!grouped[item.shop]) grouped[item.shop] = [];
-                grouped[item.shop].push(item.name);
-            });
-
-            let allOk = true;
-            for (const shop in grouped) {
-                const payload = {
-                    user_id: userId,
-                    username: 'vk_user',
-                    shop: shop,
-                    item: grouped[shop].join(', '),
-                    address: address,
-                    phone: phone,
-                    comment: comment,
-                    source: 'vk'
-                };
-                try {
-                    const response = await fetch(`${API_BASE}/api/vk_order`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    if (!response.ok || result.status === 'error') {
-                        allOk = false;
-                        document.getElementById('status').innerText = `❌ ${result.message || 'Ошибка'}`;
-                        if (result.message && result.message.includes('превышает 20 кг')) {
-                            alert(result.message);
-                        }
-                        break;
-                    }
-                } catch (e) {
-                    allOk = false;
-                    document.getElementById('status').innerText = '❌ Ошибка соединения';
-                    break;
-                }
-            }
-
-            if (allOk) {
-                document.getElementById('status').innerText = '✅ Все заказы оформлены!';
-                cart = [];
-                updateCartDisplay();
-                document.getElementById('address').value = '';
-                document.getElementById('phone').value = '';
-                document.getElementById('order-comment').value = '';
-                getOrders();
-            }
-        }
-
-        async function checkStatus() {
-            try {
-                const res = await fetch(`${API_BASE}/api/order_status/${userId}`);
-                const data = await res.json();
-                document.getElementById('status').innerText = `📦 Статус последнего заказа: ${data.status}`;
-            } catch (e) {
-                document.getElementById('status').innerText = '❌ Ошибка получения статуса';
-            }
-        }
-
-        function refreshOrders() {
-            document.getElementById('status').innerText = '🔄 Обновление...';
-            getOrders();
-        }
-
-        async function getOrders() {
-            const list = document.getElementById('orders-list');
-            try {
-                const res = await fetch(`${API_BASE}/api/user_orders/${userId}`);
-                const data = await res.json();
-                list.classList.remove('hidden');
-                if (data.orders && data.orders.length > 0) {
-                    const active = data.orders.filter(o => o.status !== '✅ Доставлен' && o.status !== '❌ Отменён');
-                    const completed = data.orders.filter(o => o.status === '✅ Доставлен' || o.status === '❌ Отменён');
-                    let html = '';
-                    if (active.length > 0) {
-                        html += `<div class="active-section"><b>🟡 Активные заказы (${active.length}):</b><br>`;
-                        active.forEach((o, i) => {
-                            const items = formatOrderItems(o.item);
-                            const weight = o.total_weight || 0;
-                            html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '🟡 Ожидает'} | Вес: ${weight} кг</div>`;
-                        });
-                        html += `</div>`;
-                    }
-                    if (completed.length > 0) {
-                        html += `<div class="completed-section"><b>✅ Завершённые (${completed.length}):</b><br>`;
-                        completed.forEach((o, i) => {
-                            const items = formatOrderItems(o.item);
-                            const rating = o.rating || '⭐️ Не оценён';
-                            const comment = o.rating_comment ? ` 📝 ${o.rating_comment}` : '';
-                            const weight = o.total_weight || 0;
-                            html += `<div class="order-item">${i+1}. ${items} (${o.shop || 'магазин'}) — ${o.status || '✅ Доставлен'} | ${rating}${comment} | Вес: ${weight} кг`;
-                            // Используем order_id вместо индекса
-                            if (o.status === '✅ Доставлен' && (!o.rating || o.rating === '⭐️ Не оценён')) {
-                                html += ` <button class="rating-btn" onclick="rateOrder(${o.order_id})">⭐️ Оценить</button>`;
-                            }
-                            html += `</div>`;
-                        });
-                        html += `</div>`;
-                    }
-                    list.innerHTML = html || '<div class="empty-msg">У вас пока нет заказов</div>';
-                } else {
-                    list.innerHTML = '<div class="empty-msg">У вас пока нет заказов</div>';
-                }
-            } catch (e) {
-                list.innerHTML = '<div class="empty-msg">❌ Ошибка загрузки заказов</div>';
-            }
-        }
-
-        function formatOrderItems(itemText) {
-            if (!itemText) return '';
-            let items = [];
-            if (itemText.includes('\n')) {
-                items = itemText.split('\n').filter(s => s.trim());
-            } else {
-                items = itemText.split(',').map(s => s.trim()).filter(s => s);
-            }
-            items = items.map(s => s.replace(/[•🛒Корзина:]/g, '').trim()).filter(s => s);
-
-            const names = items.map(item => {
-                const match = item.match(/^(.*?)\s*[—\-]/);
-                return match ? match[1].trim() : item;
-            });
-
-            const grouped = {};
-            names.forEach(name => {
-                if (!name) return;
-                if (!grouped[name]) grouped[name] = 0;
-                grouped[name] += 1;
-            });
-
-            let result = [];
-            for (const name in grouped) {
-                if (grouped[name] > 1) {
-                    result.push(`${name} x${grouped[name]}`);
-                } else {
-                    result.push(name);
-                }
-            }
-            return result.join(', ');
-        }
-
-        async function rateOrder(orderId) {
-            const rating = prompt('Оцените заказ от 1 до 5:', '5');
-            if (!rating || rating < 1 || rating > 5) {
-                alert('Пожалуйста, введите число от 1 до 5');
-                return;
-            }
-            const comment = prompt('Оставьте комментарий (необязательно):', '');
-            try {
-                const response = await fetch(`${API_BASE}/api/rate_order/${orderId}/${rating}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ comment: comment || '' })
-                });
-                if (response.ok) {
-                    alert('Спасибо за оценку!');
-                    getOrders();
-                } else {
-                    alert('Ошибка отправки оценки');
-                }
-            } catch (e) {
-                alert('Ошибка соединения');
-            }
-        }
-
-        function showSupport() {
-            document.getElementById('support-form').classList.remove('hidden');
-        }
-
-        function hideSupport() {
-            document.getElementById('support-form').classList.add('hidden');
-        }
-
-        async function sendSupport() {
-            const msg = document.getElementById('support-message').value;
-            if (!msg) { alert('Напишите сообщение'); return; }
-            try {
-                await fetch(`${API_BASE}/api/support`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, username: 'vk_user', message: msg })
-                });
-                document.getElementById('support-message').value = '';
-                hideSupport();
-                document.getElementById('status').innerText = '✅ Сообщение отправлено в поддержку!';
-            } catch (e) {
-                document.getElementById('status').innerText = '❌ Ошибка отправки';
-            }
-        }
-
-        // Восстановление согласия
-        window.addEventListener('DOMContentLoaded', function() {
-            const savedConsent = localStorage.getItem('consentGiven');
-            if (savedConsent === 'true') {
-                document.getElementById('consentCheckbox').checked = true;
+                // fallback
+                userId = 123456789;
+                loadHistory();
+                loadStatus();
             }
         });
 
-        // Инициализация VK Bridge
-        if (typeof vkBridge !== 'undefined') {
-            vkBridge.send('VKWebAppInit', {})
-                .then(() => {
-                    console.log('✅ VKAppInit OK');
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('app').classList.remove('hidden');
-                    loadShops();
-                    getOrders();
-                })
-                .catch(e => console.error('❌ Init error', e));
-        } else {
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
-            loadShops();
-            getOrders();
+        function getUserId() {
+            if (userId) return userId;
+            // Если VK не дал ID, берём из URL
+            const match = window.location.search.match(/vk_user_id=(\d+)/);
+            if (match) return parseInt(match[1]);
+            return 123456789;
         }
-    </script>
 
-    <!-- Политика конфиденциальности -->
-    <div style="text-align:center; padding:16px 0 20px 0; font-size:12px; color:#888;">
-        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank" style="color:#667eea; text-decoration:none;">
-            Политика конфиденциальности
-        </a>
-    </div>
+        // Переключение вкладок
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            if (tab === 'history') loadHistory();
+            if (tab === 'status') loadStatus();
+        }
+
+        // Создание заказа
+        async function createOrder() {
+            const shop = document.getElementById('shop').value.trim();
+            const items = document.getElementById('items').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const name = document.getElementById('name').value.trim();
+
+            if (!shop || !items || !address || !phone || !name) {
+                showToast('❌ Заполните все поля');
+                return;
+            }
+
+            const payload = {
+                user_id: getUserId(),
+                username: 'vk_user',
+                name: name,
+                shop: shop,
+                items: items,
+                address: address,
+                phone: phone,
+                comment: ''
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/vk_order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ Заявка отправлена! Номер: ' + data.order_id);
+                    document.getElementById('shop').value = '';
+                    document.getElementById('items').value = '';
+                    document.getElementById('address').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('name').value = '';
+                    loadStatus();
+                } else {
+                    showToast('❌ Ошибка: ' + data.message);
+                }
+            } catch (e) {
+                showToast('❌ Ошибка сети: ' + e.message);
+            }
+        }
+
+        // Загрузка истории заказов
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+            container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>';
+            try {
+                const res = await fetch(`${API_BASE}/api/user_orders/${getUserId()}`);
+                const data = await res.json();
+                if (data.orders && data.orders.length > 0) {
+                    let html = '';
+                    data.orders.forEach(o => {
+                        const statusClass = getStatusClass(o.status);
+                        html += `
+                            <div class="order-card">
+                                <div class="header-row">
+                                    <span class="order-id">#${o.order_id}</span>
+                                    <span class="order-date">${new Date(o.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <div class="order-items">${o.items}</div>
+                                <div class="order-address">📍 ${o.address}</div>
+                                <div><span class="order-status ${statusClass}">${o.status}</span></div>
+                                ${o.rating && o.rating !== '⭐️ Не оценён' ? `<div style="margin-top:4px; color:#f5a623;">${o.rating}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">📭 У вас пока нет заказов</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="text-align:center; color:#d32f2f; padding:20px 0;">❌ Ошибка загрузки</p>';
+            }
+        }
+
+        // Загрузка статуса последнего заказа
+        async function loadStatus() {
+            const container = document.getElementById('status-container');
+            container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>';
+            try {
+                const res = await fetch(`${API_BASE}/api/order_status/${getUserId()}`);
+                const data = await res.json();
+                if (data.status && data.status !== 'У вас пока нет заказов') {
+                    const statusClass = getStatusClass(data.status);
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:20px 0;">
+                            <div style="font-size:48px; margin-bottom:12px;">📦</div>
+                            <div style="font-size:20px; font-weight:600;">Статус заказа</div>
+                            <div style="margin-top:12px; display:inline-block; padding:8px 24px; border-radius:20px; background:${getStatusColor(data.status)}; color:white; font-weight:600;">${data.status}</div>
+                            <div style="margin-top:12px; color:#888; font-size:13px;">Обновление каждые 30 секунд</div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">📭 У вас пока нет активных заказов</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="text-align:center; color:#d32f2f; padding:20px 0;">❌ Ошибка загрузки</p>';
+            }
+        }
+
+        function getStatusClass(status) {
+            if (status.includes('Ожидает')) return 'status-waiting';
+            if (status.includes('Принят')) return 'status-accepted';
+            if (status.includes('В пути')) return 'status-delivering';
+            if (status.includes('Доставлен')) return 'status-delivered';
+            if (status.includes('Отклонён')) return 'status-rejected';
+            return '';
+        }
+
+        function getStatusColor(status) {
+            if (status.includes('Ожидает')) return '#856404';
+            if (status.includes('Принят')) return '#004085';
+            if (status.includes('В пути')) return '#0c5460';
+            if (status.includes('Доставлен')) return '#155724';
+            if (status.includes('Отклонён')) return '#721c24';
+            return '#666';
+        }
+
+        function setRating(rating) {
+            selectedRating = rating;
+            document.querySelectorAll('#rating-stars button').forEach((btn, i) => {
+                btn.textContent = i < rating ? '⭐' : '☆';
+                btn.style.color = i < rating ? '#f5a623' : '#ccc';
+            });
+        }
+
+        async function submitRating() {
+            if (!selectedRating) {
+                showToast('❌ Выберите оценку');
+                return;
+            }
+            const comment = document.getElementById('review-comment').value.trim();
+            const orderId = currentOrderId || 9; // fallback
+            try {
+                const res = await fetch(`${API_BASE}/api/rate_order/${orderId}/${selectedRating}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment: comment })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ Спасибо за оценку!');
+                    document.getElementById('tab-rating').classList.add('hidden');
+                    document.getElementById('tab-history').classList.remove('hidden');
+                    switchTab('history');
+                } else {
+                    showToast('❌ Ошибка: ' + data.message);
+                }
+            } catch (e) {
+                showToast('❌ Ошибка сети: ' + e.message);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Обновление статуса каждые 30 секунд
+        setInterval(() => {
+            if (!document.getElementById('tab-status').classList.contains('hidden')) {
+                loadStatus();
+            }
+            if (!document.getElementById('tab-history').classList.contains('hidden')) {
+                loadHistory();
+            }
+        }, 30000);
+
+        // Показываем вкладку "Заказать" при загрузке
+        switchTab('order');
+    </script>
 </body>
 </html>
