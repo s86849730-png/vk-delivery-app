@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DoSHtavKa — Доставка еды</title>
-    <script type="text/javascript" src="https://vk.com/js/api/openapi.js?169"></script>
+    <title>DoSHtavKa — Доставка</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, system-ui, sans-serif; background: #f5f5f5; padding: 16px; color: #1a1a1a; }
@@ -13,42 +12,35 @@
         .header { text-align: center; padding: 16px 0; }
         .header h1 { font-size: 24px; color: #2d7d46; }
         .header p { color: #666; font-size: 14px; margin-top: 4px; }
-        .btn { display: inline-block; padding: 12px 24px; background: #2d7d46; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+        .btn { display: block; width: 100%; padding: 12px; background: #2d7d46; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
         .btn:active { opacity: 0.8; }
-        .btn-secondary { background: #e8f5e9; color: #2d7d46; }
-        .order-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-        .order-item:last-child { border-bottom: none; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2d7d46; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .tab-bar { display: flex; margin-bottom: 16px; border-radius: 12px; overflow: hidden; background: #e8e8e8; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; cursor: pointer; }
+        .tab.active { background: #2d7d46; color: white; }
+        .tab:not(.active) { background: #e8e8e8; color: #666; }
+        .hidden { display: none; }
+        .order-card { background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #2d7d46; }
+        .order-card .header-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .order-card .order-id { font-weight: 700; }
+        .order-card .order-date { color: #888; font-size: 12px; }
         .order-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 4px; }
         .status-waiting { background: #fff3cd; color: #856404; }
         .status-accepted { background: #cce5ff; color: #004085; }
         .status-delivering { background: #d1ecf1; color: #0c5460; }
         .status-delivered { background: #d4edda; color: #155724; }
         .status-rejected { background: #f8d7da; color: #721c24; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #333; }
-        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; transition: border 0.2s; }
-        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2d7d46; }
-        .form-group textarea { min-height: 80px; resize: vertical; }
-        .tab-bar { display: flex; margin-bottom: 16px; border-radius: 12px; overflow: hidden; background: #e8e8e8; }
-        .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .tab.active { background: #2d7d46; color: white; }
-        .tab:not(.active) { background: #e8e8e8; color: #666; }
-        .hidden { display: none; }
-        .rating-stars { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
-        .rating-stars button { font-size: 32px; background: none; border: none; cursor: pointer; transition: transform 0.2s; }
-        .rating-stars button:active { transform: scale(1.2); }
-        .order-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-        .order-card .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .order-card .order-id { font-weight: 700; font-size: 16px; }
-        .order-card .order-date { color: #888; font-size: 12px; }
-        .order-card .order-items { color: #333; font-size: 14px; margin: 4px 0; }
-        .order-card .order-address { color: #666; font-size: 13px; }
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
         .toast.show { opacity: 1; }
+        .loading { text-align: center; color: #888; padding: 20px 0; }
     </style>
 </head>
 <body>
-    <div class="container" id="app">
+    <div class="container">
         <div class="header">
             <h1>🍽️ DoSHtavKa</h1>
             <p>Доставка еды в Бородино</p>
@@ -60,116 +52,54 @@
             <div class="tab" data-tab="status" onclick="switchTab('status')">📊 Статус</div>
         </div>
 
-        <!-- Вкладка "Заказать" -->
-        <div id="tab-order" class="tab-content">
+        <div id="tab-order">
             <div class="card">
-                <div class="form-group">
-                    <label>Название магазина</label>
-                    <input type="text" id="shop" placeholder="Например: Вкусный Ланч">
-                </div>
-                <div class="form-group">
-                    <label>Что заказать?</label>
-                    <textarea id="items" placeholder="Опишите блюда и количество"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Адрес доставки</label>
-                    <input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12">
-                </div>
-                <div class="form-group">
-                    <label>Телефон</label>
-                    <input type="text" id="phone" placeholder="+7 999 111 22 33">
-                </div>
-                <div class="form-group">
-                    <label>Ваше имя</label>
-                    <input type="text" id="name" placeholder="Алексей">
-                </div>
+                <div class="form-group"><label>Название магазина</label><input type="text" id="shop" placeholder="Вкусный Ланч"></div>
+                <div class="form-group"><label>Что заказать?</label><textarea id="items" placeholder="2 лаваша с мясом, 1 с сыром"></textarea></div>
+                <div class="form-group"><label>Адрес доставки</label><input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12"></div>
+                <div class="form-group"><label>Телефон</label><input type="text" id="phone" placeholder="+7 999 111 22 33"></div>
+                <div class="form-group"><label>Ваше имя</label><input type="text" id="name" placeholder="Алексей"></div>
                 <button class="btn" onclick="createOrder()">📤 Отправить заявку</button>
             </div>
             <div class="card" style="background:#e8f5e9; border-left: 4px solid #2d7d46;">
-                <p style="font-size:13px; color:#2d7d46;">
-                    📌 После отправки заявки мы свяжемся с вами в ближайшее время.<br>
-                    ⏳ Статус заказа можно посмотреть во вкладке «Статус».
-                </p>
+                <p style="font-size:13px; color:#2d7d46;">📌 После отправки мы свяжемся с вами. Статус можно посмотреть во вкладке «Статус».</p>
             </div>
         </div>
 
-        <!-- Вкладка "История" -->
-        <div id="tab-history" class="tab-content hidden">
-            <div class="card" id="history-container">
-                <p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>
-            </div>
+        <div id="tab-history" class="hidden">
+            <div class="card" id="history-container"><div class="loading">Загрузка...</div></div>
         </div>
 
-        <!-- Вкладка "Статус" -->
-        <div id="tab-status" class="tab-content hidden">
-            <div class="card" id="status-container">
-                <p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>
-            </div>
-        </div>
-
-        <!-- Вкладка "Оценка" (появляется после доставки) -->
-        <div id="tab-rating" class="tab-content hidden">
-            <div class="card" id="rating-container">
-                <h3 style="text-align:center; margin-bottom:16px;">⭐️ Оцените доставку</h3>
-                <div class="rating-stars" id="rating-stars">
-                    <button onclick="setRating(1)">⭐</button>
-                    <button onclick="setRating(2)">⭐</button>
-                    <button onclick="setRating(3)">⭐</button>
-                    <button onclick="setRating(4)">⭐</button>
-                    <button onclick="setRating(5)">⭐</button>
-                </div>
-                <div class="form-group">
-                    <label>Ваш отзыв</label>
-                    <textarea id="review-comment" placeholder="Напишите, что понравилось..."></textarea>
-                </div>
-                <button class="btn" onclick="submitRating()">📤 Отправить оценку</button>
-            </div>
+        <div id="tab-status" class="hidden">
+            <div class="card" id="status-container"><div class="loading">Загрузка...</div></div>
         </div>
     </div>
 
     <div id="toast" class="toast"></div>
 
     <script>
-        // Конфигурация
-        const API_BASE = 'https://quantities-technique-investments-college.trycloudflare.com';
-        let userId = null;
-        let selectedRating = 0;
-        let currentOrderId = null;
-
-        // VK Bridge
-        VK.init({ apiId: 54689427 });
-        VK.Widgets.Auth.getUserInfo(function(data) {
-            if (data && data.id) {
-                userId = data.id;
-                loadHistory();
-                loadStatus();
-            } else {
-                // fallback
-                userId = 123456789;
-                loadHistory();
-                loadStatus();
-            }
-        });
-
+        const API_BASE = 'https://messenger-geneva-hung-liable.trycloudflare.com';
+        
         function getUserId() {
-            if (userId) return userId;
-            // Если VK не дал ID, берём из URL
-            const match = window.location.search.match(/vk_user_id=(\d+)/);
+            const match = window.location.search.match(/[?&]vk_user_id=([^&]+)/);
             if (match) return parseInt(match[1]);
             return 123456789;
         }
 
-        // Переключение вкладок
+        const USER_ID = getUserId();
+        console.log('✅ User ID:', USER_ID);
+
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-order').classList.add('hidden');
+            document.getElementById('tab-history').classList.add('hidden');
+            document.getElementById('tab-status').classList.add('hidden');
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
             if (tab === 'history') loadHistory();
             if (tab === 'status') loadStatus();
         }
 
-        // Создание заказа
         async function createOrder() {
             const shop = document.getElementById('shop').value.trim();
             const items = document.getElementById('items').value.trim();
@@ -182,22 +112,12 @@
                 return;
             }
 
-            const payload = {
-                user_id: getUserId(),
-                username: 'vk_user',
-                name: name,
-                shop: shop,
-                items: items,
-                address: address,
-                phone: phone,
-                comment: ''
-            };
-
             try {
+                showToast('⏳ Отправка...');
                 const res = await fetch(`${API_BASE}/api/vk_order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ user_id: USER_ID, username: 'vk_user', name, shop, items, address, phone, comment: '' })
                 });
                 const data = await res.json();
                 if (data.status === 'ok') {
@@ -216,25 +136,28 @@
             }
         }
 
-        // Загрузка истории заказов
         async function loadHistory() {
             const container = document.getElementById('history-container');
-            container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>';
+            container.innerHTML = '<div class="loading">Загрузка...</div>';
             try {
-                const res = await fetch(`${API_BASE}/api/user_orders/${getUserId()}`);
+                const res = await fetch(`${API_BASE}/api/user_orders/${USER_ID}`);
                 const data = await res.json();
                 if (data.orders && data.orders.length > 0) {
                     let html = '';
                     data.orders.forEach(o => {
-                        const statusClass = getStatusClass(o.status);
+                        const statusClass = o.status.includes('Ожидает') ? 'status-waiting' :
+                                           o.status.includes('Принят') ? 'status-accepted' :
+                                           o.status.includes('В пути') ? 'status-delivering' :
+                                           o.status.includes('Доставлен') ? 'status-delivered' :
+                                           o.status.includes('Отклонён') ? 'status-rejected' : '';
                         html += `
                             <div class="order-card">
                                 <div class="header-row">
                                     <span class="order-id">#${o.order_id}</span>
                                     <span class="order-date">${new Date(o.created_at).toLocaleDateString()}</span>
                                 </div>
-                                <div class="order-items">${o.items}</div>
-                                <div class="order-address">📍 ${o.address}</div>
+                                <div><b>${o.shop || 'Магазин'}</b>: ${o.items}</div>
+                                <div>📍 ${o.address}</div>
                                 <div><span class="order-status ${statusClass}">${o.status}</span></div>
                                 ${o.rating && o.rating !== '⭐️ Не оценён' ? `<div style="margin-top:4px; color:#f5a623;">${o.rating}</div>` : ''}
                             </div>
@@ -249,20 +172,23 @@
             }
         }
 
-        // Загрузка статуса последнего заказа
         async function loadStatus() {
             const container = document.getElementById('status-container');
-            container.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0;">Загрузка...</p>';
+            container.innerHTML = '<div class="loading">Загрузка...</div>';
             try {
-                const res = await fetch(`${API_BASE}/api/order_status/${getUserId()}`);
+                const res = await fetch(`${API_BASE}/api/order_status/${USER_ID}`);
                 const data = await res.json();
                 if (data.status && data.status !== 'У вас пока нет заказов') {
-                    const statusClass = getStatusClass(data.status);
+                    const color = data.status.includes('Ожидает') ? '#856404' :
+                                 data.status.includes('Принят') ? '#004085' :
+                                 data.status.includes('В пути') ? '#0c5460' :
+                                 data.status.includes('Доставлен') ? '#155724' :
+                                 data.status.includes('Отклонён') ? '#721c24' : '#666';
                     container.innerHTML = `
                         <div style="text-align:center; padding:20px 0;">
-                            <div style="font-size:48px; margin-bottom:12px;">📦</div>
+                            <div style="font-size:48px;">📦</div>
                             <div style="font-size:20px; font-weight:600;">Статус заказа</div>
-                            <div style="margin-top:12px; display:inline-block; padding:8px 24px; border-radius:20px; background:${getStatusColor(data.status)}; color:white; font-weight:600;">${data.status}</div>
+                            <div style="margin-top:12px; display:inline-block; padding:8px 24px; border-radius:20px; background:${color}; color:white; font-weight:600;">${data.status}</div>
                             <div style="margin-top:12px; color:#888; font-size:13px;">Обновление каждые 30 секунд</div>
                         </div>
                     `;
@@ -274,59 +200,6 @@
             }
         }
 
-        function getStatusClass(status) {
-            if (status.includes('Ожидает')) return 'status-waiting';
-            if (status.includes('Принят')) return 'status-accepted';
-            if (status.includes('В пути')) return 'status-delivering';
-            if (status.includes('Доставлен')) return 'status-delivered';
-            if (status.includes('Отклонён')) return 'status-rejected';
-            return '';
-        }
-
-        function getStatusColor(status) {
-            if (status.includes('Ожидает')) return '#856404';
-            if (status.includes('Принят')) return '#004085';
-            if (status.includes('В пути')) return '#0c5460';
-            if (status.includes('Доставлен')) return '#155724';
-            if (status.includes('Отклонён')) return '#721c24';
-            return '#666';
-        }
-
-        function setRating(rating) {
-            selectedRating = rating;
-            document.querySelectorAll('#rating-stars button').forEach((btn, i) => {
-                btn.textContent = i < rating ? '⭐' : '☆';
-                btn.style.color = i < rating ? '#f5a623' : '#ccc';
-            });
-        }
-
-        async function submitRating() {
-            if (!selectedRating) {
-                showToast('❌ Выберите оценку');
-                return;
-            }
-            const comment = document.getElementById('review-comment').value.trim();
-            const orderId = currentOrderId || 9; // fallback
-            try {
-                const res = await fetch(`${API_BASE}/api/rate_order/${orderId}/${selectedRating}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ comment: comment })
-                });
-                const data = await res.json();
-                if (data.status === 'ok') {
-                    showToast('✅ Спасибо за оценку!');
-                    document.getElementById('tab-rating').classList.add('hidden');
-                    document.getElementById('tab-history').classList.remove('hidden');
-                    switchTab('history');
-                } else {
-                    showToast('❌ Ошибка: ' + data.message);
-                }
-            } catch (e) {
-                showToast('❌ Ошибка сети: ' + e.message);
-            }
-        }
-
         function showToast(msg) {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
@@ -334,18 +207,13 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Обновление статуса каждые 30 секунд
         setInterval(() => {
-            if (!document.getElementById('tab-status').classList.contains('hidden')) {
-                loadStatus();
-            }
-            if (!document.getElementById('tab-history').classList.contains('hidden')) {
-                loadHistory();
-            }
+            if (!document.getElementById('tab-status').classList.contains('hidden')) loadStatus();
+            if (!document.getElementById('tab-history').classList.contains('hidden')) loadHistory();
         }, 30000);
 
-        // Показываем вкладку "Заказать" при загрузке
         switchTab('order');
+        console.log('✅ DoSHtavKa v2 загружен!');
     </script>
 </body>
 </html>
