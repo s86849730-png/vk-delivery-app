@@ -13,7 +13,8 @@
         .header h1 { font-size: 24px; color: #2d7d46; }
         .header p { color: #666; font-size: 14px; margin-top: 4px; }
         .btn { display: block; width: 100%; padding: 12px; background: #2d7d46; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .btn:active { opacity: 0.8; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:active:not(:disabled) { opacity: 0.8; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #333; }
         .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; }
@@ -42,6 +43,11 @@
         .footer a { color: #2d7d46; text-decoration: none; }
         .footer a:hover { text-decoration: underline; }
         .privacy-link { margin-top: 8px; }
+        .checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; }
+        .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+        .checkbox-group label { font-size: 13px; color: #555; line-height: 1.4; cursor: pointer; }
+        .checkbox-group label a { color: #2d7d46; text-decoration: none; font-weight: 600; }
+        .checkbox-group label a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -78,7 +84,18 @@
                 <div class="form-group"><label>Адрес доставки</label><input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12"></div>
                 <div class="form-group"><label>Телефон</label><input type="text" id="phone" placeholder="+7 999 111 22 33"></div>
                 <div class="form-group"><label>Ваше имя</label><input type="text" id="name" placeholder="Алексей"></div>
-                <button class="btn" onclick="createOrder()">📤 Отправить заявку</button>
+                
+                <!-- Галочка согласия -->
+                <div class="checkbox-group">
+                    <input type="checkbox" id="agree" onchange="toggleSubmit()">
+                    <label for="agree">
+                        Я согласен с 
+                        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">политикой конфиденциальности</a> 
+                        и условиями доставки
+                    </label>
+                </div>
+
+                <button class="btn" id="submitBtn" onclick="createOrder()" disabled>📤 Отправить заявку</button>
             </div>
         </div>
 
@@ -118,6 +135,11 @@
         const USER_ID = getUserId();
         console.log('✅ User ID:', USER_ID);
 
+        function toggleSubmit() {
+            const agree = document.getElementById('agree').checked;
+            document.getElementById('submitBtn').disabled = !agree;
+        }
+
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
@@ -130,6 +152,11 @@
         }
 
         async function createOrder() {
+            if (!document.getElementById('agree').checked) {
+                showToast('❌ Подтвердите согласие с политикой');
+                return;
+            }
+
             const shop = document.getElementById('shop').value.trim();
             const items = document.getElementById('items').value.trim();
             const address = document.getElementById('address').value.trim();
@@ -146,7 +173,13 @@
                 const res = await fetch(`${API_BASE}/api/vk_order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: USER_ID, username: 'vk_user', name, shop, items, address, phone, comment: '' })
+                    body: JSON.stringify({ 
+                        user_id: USER_ID, 
+                        username: 'vk_user', 
+                        name, shop, items, address, phone, 
+                        comment: '',
+                        agreed: true 
+                    })
                 });
                 const data = await res.json();
                 if (data.status === 'ok') {
@@ -156,6 +189,8 @@
                     document.getElementById('address').value = '';
                     document.getElementById('phone').value = '';
                     document.getElementById('name').value = '';
+                    document.getElementById('agree').checked = false;
+                    toggleSubmit();
                     loadStatus();
                 } else {
                     showToast('❌ Ошибка: ' + data.message);
