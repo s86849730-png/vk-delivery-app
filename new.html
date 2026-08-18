@@ -3,122 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DoSHtavKa</title>
+    <title>DoSHtavKa — Доставка</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { 
-            height: 100%;
-            width: 100%;
-            font-family: -apple-system, system-ui, sans-serif; 
-            background: #f5f5f5; 
-            padding: 0;
-            color: #1a1a1a;
-            overflow-x: hidden;
-        }
-        .container { 
-            max-width: 480px; 
-            margin: 0 auto; 
-            padding: 16px;
-            min-height: 100vh;
-            background: #f5f5f5;
-        }
-        .card { 
-            background: white; 
-            border-radius: 16px; 
-            padding: 20px; 
-            margin-bottom: 16px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
-        }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f5f5f5; padding: 0; color: #1a1a1a; }
+        .container { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100vh; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .header { text-align: center; padding: 16px 0; }
         .header h1 { font-size: 24px; color: #2d7d46; }
         .header p { color: #666; font-size: 14px; margin-top: 4px; }
-        .btn { 
-            display: block; 
-            width: 100%; 
-            padding: 12px; 
-            background: #2d7d46; 
-            color: white; 
-            border: none; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-        }
+        .btn { display: block; width: 100%; padding: 12px; background: #2d7d46; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
         .btn:active { opacity: 0.8; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #333; }
-        .form-group input, .form-group textarea { 
-            width: 100%; 
-            padding: 12px; 
-            border: 2px solid #e0e0e0; 
-            border-radius: 12px; 
-            font-size: 16px; 
-        }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; }
         .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2d7d46; }
         .form-group textarea { min-height: 80px; resize: vertical; }
-        .tab-bar { 
-            display: flex; 
-            margin-bottom: 16px; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            background: #e8e8e8; 
-        }
-        .tab { 
-            flex: 1; 
-            padding: 12px; 
-            text-align: center; 
-            font-weight: 600; 
-            cursor: pointer; 
-            background: #e8e8e8; 
-            color: #666; 
-        }
+        .tab-bar { display: flex; margin-bottom: 16px; border-radius: 12px; overflow: hidden; background: #e8e8e8; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; cursor: pointer; background: #e8e8e8; color: #666; }
         .tab.active { background: #2d7d46; color: white; }
         .hidden { display: none; }
-        .order-card { 
-            background: #f8f9fa; 
-            border-radius: 12px; 
-            padding: 16px; 
-            margin-bottom: 12px; 
-            border-left: 4px solid #2d7d46; 
-        }
-        .order-status { 
-            display: inline-block; 
-            padding: 4px 12px; 
-            border-radius: 20px; 
-            font-size: 12px; 
-            font-weight: 600; 
-            margin-top: 4px; 
-        }
+        .order-card { background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #2d7d46; }
+        .order-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 4px; }
         .status-waiting { background: #fff3cd; color: #856404; }
         .status-accepted { background: #cce5ff; color: #004085; }
         .status-delivering { background: #d1ecf1; color: #0c5460; }
         .status-delivered { background: #d4edda; color: #155724; }
         .status-rejected { background: #f8d7da; color: #721c24; }
-        .toast { 
-            position: fixed; 
-            bottom: 20px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            background: #333; 
-            color: white; 
-            padding: 12px 24px; 
-            border-radius: 12px; 
-            font-size: 14px; 
-            opacity: 0; 
-            transition: opacity 0.3s; 
-            pointer-events: none; 
-            z-index: 1000; 
-        }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
         .toast.show { opacity: 1; }
         .loading { text-align: center; color: #888; padding: 20px 0; }
-        #app { min-height: 400px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .info-item { background: #f8f9fa; padding: 8px 12px; border-radius: 8px; font-size: 13px; }
+        .info-item .label { color: #888; font-size: 11px; text-transform: uppercase; }
+        .info-item .value { font-weight: 600; }
+        .delivery-address { background: #e8f5e9; padding: 12px; border-radius: 12px; margin-top: 12px; font-size: 14px; border-left: 4px solid #2d7d46; }
+        .footer { text-align: center; font-size: 12px; color: #888; padding: 16px 0; }
+        .footer a { color: #2d7d46; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .privacy-link { margin-top: 8px; }
     </style>
 </head>
 <body>
-    <div class="container" id="app">
+    <div class="container">
         <div class="header">
             <h1>🍽️ DoSHtavKa</h1>
             <p>Доставка еды в Бородино</p>
+        </div>
+
+        <!-- Условия доставки -->
+        <div class="card">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📋 Условия доставки</div>
+            <div class="info-grid">
+                <div class="info-item"><div class="label">🕐 График работы</div><div class="value">11:00 – 22:00</div></div>
+                <div class="info-item"><div class="label">💰 Доставка</div><div class="value">150 ₽</div></div>
+                <div class="info-item"><div class="label">⚖️ Макс. вес</div><div class="value">20 кг</div></div>
+                <div class="info-item"><div class="label">⏱️ Время доставки</div><div class="value">40–60 мин</div></div>
+            </div>
+            <div class="delivery-address">
+                📍 Адрес магазина: <b>ул. Ленина, д. 15</b>
+            </div>
         </div>
 
         <div class="tab-bar">
@@ -145,12 +89,25 @@
         <div id="tab-status" class="hidden">
             <div class="card" id="status-container"><div class="loading">Загрузка...</div></div>
         </div>
+
+        <!-- Подвал -->
+        <div class="footer">
+            <div class="privacy-link">
+                <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">🔒 Политика конфиденциальности</a>
+            </div>
+            <div style="margin-top: 4px;">
+                По всем вопросам: <a href="https://vk.com/club228340103" target="_blank">Сообщество ВКонтакте</a>
+            </div>
+            <div style="margin-top: 4px; font-size: 11px; color: #aaa;">
+                DoSHtavKa © 2026
+            </div>
+        </div>
     </div>
 
     <div id="toast" class="toast"></div>
 
     <script>
-        const API_BASE = "https://cassette-chrome-triumph-configurations.trycloudflare.com";
+        const API_BASE = 'https://cassette-chrome-triumph-configurations.trycloudflare.com';
         
         function getUserId() {
             const match = window.location.search.match(/[?&]vk_user_id=([^&]+)/);
