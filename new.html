@@ -79,7 +79,6 @@
 
         <div id="tab-order">
             <div class="card">
-                <div class="form-group"><label>Название магазина</label><input type="text" id="shop" placeholder="Вкусный Ланч"></div>
                 <div class="form-group"><label>Что заказать?</label><textarea id="items" placeholder="2 лаваша с мясом, 1 с сыром"></textarea></div>
                 <div class="form-group"><label>Адрес доставки</label><input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12"></div>
                 <div class="form-group"><label>Телефон</label><input type="text" id="phone" placeholder="+7 999 111 22 33"></div>
@@ -157,13 +156,12 @@
                 return;
             }
 
-            const shop = document.getElementById('shop').value.trim();
             const items = document.getElementById('items').value.trim();
             const address = document.getElementById('address').value.trim();
             const phone = document.getElementById('phone').value.trim();
             const name = document.getElementById('name').value.trim();
 
-            if (!shop || !items || !address || !phone || !name) {
+            if (!items || !address || !phone || !name) {
                 showToast('❌ Заполните все поля');
                 return;
             }
@@ -176,7 +174,11 @@
                     body: JSON.stringify({ 
                         user_id: USER_ID, 
                         username: 'vk_user', 
-                        name, shop, items, address, phone, 
+                        name, 
+                        shop: 'Чикен Денер',
+                        items, 
+                        address, 
+                        phone, 
                         comment: '',
                         agreed: true 
                     })
@@ -184,7 +186,6 @@
                 const data = await res.json();
                 if (data.status === 'ok') {
                     showToast('✅ Заявка отправлена! Номер: ' + data.order_id);
-                    document.getElementById('shop').value = '';
                     document.getElementById('items').value = '';
                     document.getElementById('address').value = '';
                     document.getElementById('phone').value = '';
