@@ -58,6 +58,9 @@
         .rating-stars button:active { transform: scale(1.2); }
         .rating-stars button.selected { color: #f5a623; }
         .rating-stars button:not(.selected) { color: #ccc; }
+        .user-id-box { background: #e3f2fd; padding: 10px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .user-id-box input { flex: 1; min-width: 100px; padding: 6px 10px; border: 1px solid #90caf9; border-radius: 8px; font-size: 14px; }
+        .user-id-box .btn-sm { padding: 6px 16px; background: #1976d2; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -75,6 +78,17 @@
                 <div class="info-item"><div class="label">⚖️ Макс. вес</div><div class="value">20 кг</div></div>
                 <div class="info-item"><div class="label">⏱️ Время доставки</div><div class="value">40–60 мин</div></div>
             </div>
+        </div>
+
+        <!-- Блок для ID пользователя -->
+        <div class="card">
+            <div class="user-id-box">
+                <span style="font-weight:600;">🆔 Ваш ID:</span>
+                <input type="number" id="userIdInput" placeholder="Введите ID">
+                <button class="btn-sm" onclick="setUserId()">Применить</button>
+                <span style="font-size:12px; color:#888; margin-left:auto;">(если не определился автоматически)</span>
+            </div>
+            <div style="font-size:13px; color:#888; text-align:center;">Текущий ID: <span id="currentUserIdDisplay">123456789</span></div>
         </div>
 
         <div class="tab-bar">
@@ -121,9 +135,9 @@
         let selectedRating = 0;
         let USER_ID = null;
 
-        // ===== ПОЛУЧЕНИЕ РЕАЛЬНОГО USER_ID ИЗ VK =====
+        // ===== ПОЛУЧЕНИЕ USER_ID =====
         function getUserId() {
-            // 1. Пробуем получить из URL (если VK передал)
+            // 1. Из URL (VK)
             const match = window.location.search.match(/[?&]vk_user_id=([^&]+)/);
             if (match) {
                 USER_ID = parseInt(match[1]);
@@ -131,35 +145,55 @@
                 return USER_ID;
             }
 
-            // 2. Пробуем из localStorage (если уже сохраняли)
+            // 2. Из localStorage
             const saved = localStorage.getItem('vk_user_id');
             if (saved) {
                 USER_ID = parseInt(saved);
                 return USER_ID;
             }
 
-            // 3. Пробуем получить через VK Bridge (если открыто внутри VK)
+            // 3. Из VK Bridge
             if (typeof VK !== 'undefined' && VK.callMethod) {
                 VK.callMethod('VKWebAppGetUserInfo', {}, function(data) {
                     if (data && data.response && data.response.id) {
                         USER_ID = data.response.id;
                         localStorage.setItem('vk_user_id', USER_ID);
-                        // После получения ID перезагружаем данные
                         loadHistory();
                         loadStatus();
+                        updateDisplay();
                     }
                 });
-                // Возвращаем заглушку, пока ID не получен
                 return USER_ID || 123456789;
             }
 
-            // 4. Если ничего не помогло — возвращаем заглушку
+            // 4. Заглушка
             return 123456789;
+        }
+
+        function setUserId() {
+            const input = document.getElementById('userIdInput');
+            const val = parseInt(input.value.trim());
+            if (val && val > 0) {
+                USER_ID = val;
+                localStorage.setItem('vk_user_id', USER_ID);
+                updateDisplay();
+                loadHistory();
+                loadStatus();
+                showToast('✅ ID обновлён: ' + USER_ID);
+                input.value = '';
+            } else {
+                showToast('❌ Введите корректный ID (число)');
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('currentUserIdDisplay').textContent = USER_ID || 'не определён';
         }
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         document.addEventListener('DOMContentLoaded', function() {
             USER_ID = getUserId();
+            updateDisplay();
             console.log('✅ User ID:', USER_ID);
             switchTab('order');
             loadHistory();
