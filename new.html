@@ -47,6 +47,12 @@
         .checkbox-group label { font-size: 13px; color: #555; line-height: 1.4; cursor: pointer; }
         .checkbox-group label a { color: #2d7d46; text-decoration: none; font-weight: 600; }
         .checkbox-group label a:hover { text-decoration: underline; }
+        .status-detail { background: #f8f9fa; padding: 12px; border-radius: 12px; margin-top: 8px; font-size: 14px; }
+        .status-detail .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
+        .status-detail .row:last-child { border-bottom: none; }
+        .status-detail .label { color: #888; }
+        .status-detail .value { font-weight: 600; }
+        .rejected-reason { background: #f8d7da; padding: 12px; border-radius: 12px; margin-top: 8px; color: #721c24; }
     </style>
 </head>
 <body>
@@ -75,7 +81,7 @@
 
         <div id="tab-order">
             <div class="card">
-                <div class="form-group"><label>Адрес и название магазина</label><input type="text" id="shop" placeholder="Например: Вкусный Ланч, ул. Центральная, 10"></div>
+                <div class="form-group"><label>Адрес и название ресторана</label><input type="text" id="shop" placeholder="Например: Вкусный Ланч, ул. Центральная, 10"></div>
                 <div class="form-group"><label>Что заказать?</label><textarea id="items" placeholder="2 лаваша с мясом, 1 с сыром"></textarea></div>
                 <div class="form-group"><label>Адрес доставки</label><input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12"></div>
                 <div class="form-group"><label>Телефон</label><input type="text" id="phone" placeholder="+7 999 111 22 33"></div>
@@ -212,9 +218,12 @@
                                            o.status.includes('Отклонён') ? 'status-rejected' : '';
                         html += `
                             <div class="order-card">
-                                <div><b>${o.shop || 'Магазин'}</b>: ${o.items}</div>
+                                <div><b>${o.shop || 'Ресторан'}</b>: ${o.items}</div>
                                 <div>📍 ${o.address}</div>
                                 <div><span class="order-status ${statusClass}">${o.status}</span></div>
+                                ${o.deliveryman ? `<div>🚚 Доставщик: ${o.deliveryman}</div>` : ''}
+                                ${o.deliveryman_phone ? `<div>📞 Телефон: ${o.deliveryman_phone}</div>` : ''}
+                                ${o.admin_comment && o.status.includes('Отклонён') ? `<div class="rejected-reason">📝 Причина: ${o.admin_comment}</div>` : ''}
                                 ${o.rating && o.rating !== '⭐️ Не оценён' ? `<div style="margin-top:4px; color:#f5a623;">${o.rating}</div>` : ''}
                             </div>
                         `;
@@ -235,16 +244,40 @@
                 const res = await fetch(`${API_BASE}/api/order_status/${USER_ID}`);
                 const data = await res.json();
                 if (data.status && data.status !== 'У вас пока нет заказов') {
+                    // Получаем полную информацию о последнем заказе
+                    const ordersRes = await fetch(`${API_BASE}/api/user_orders/${USER_ID}`);
+                    const ordersData = await ordersRes.json();
+                    const lastOrder = ordersData.orders && ordersData.orders.length > 0 ? ordersData.orders[0] : null;
+                    
                     const color = data.status.includes('Ожидает') ? '#856404' :
                                  data.status.includes('Принят') ? '#004085' :
                                  data.status.includes('В пути') ? '#0c5460' :
                                  data.status.includes('Доставлен') ? '#155724' :
                                  data.status.includes('Отклонён') ? '#721c24' : '#666';
+                    
+                    let extraInfo = '';
+                    if (lastOrder) {
+                        if (lastOrder.deliveryman) {
+                            extraInfo += `<div class="row"><span class="label">🚚 Доставщик</span><span class="value">${lastOrder.deliveryman}</span></div>`;
+                        }
+                        if (lastOrder.deliveryman_phone) {
+                            extraInfo += `<div class="row"><span class="label">📞 Телефон</span><span class="value">${lastOrder.deliveryman_phone}</span></div>`;
+                        }
+                        if (lastOrder.admin_comment && lastOrder.status === '❌ Отклонён') {
+                            extraInfo += `<div class="rejected-reason">📝 Причина отказа: ${lastOrder.admin_comment}</div>`;
+                        }
+                        if (lastOrder.rating && lastOrder.rating !== '⭐️ Не оценён') {
+                            extraInfo += `<div class="row"><span class="label">⭐️ Рейтинг</span><span class="value">${lastOrder.rating}</span></div>`;
+                        }
+                    }
+                    
                     container.innerHTML = `
-                        <div style="text-align:center; padding:20px 0;">
+                        <div style="text-align:center; padding:10px 0;">
                             <div style="font-size:48px;">📦</div>
                             <div style="font-size:20px; font-weight:600;">Статус заказа</div>
                             <div style="margin-top:12px; display:inline-block; padding:8px 24px; border-radius:20px; background:${color}; color:white; font-weight:600;">${data.status}</div>
+                            ${extraInfo ? `<div class="status-detail" style="margin-top:16px; text-align:left;">${extraInfo}</div>` : ''}
+                            <div style="margin-top:12px; color:#888; font-size:13px;">Обновление каждые 30 секунд</div>
                         </div>
                     `;
                 } else {
@@ -252,6 +285,7 @@
                 }
             } catch (e) {
                 container.innerHTML = '<p style="text-align:center; color:#d32f2f; padding:20px 0;">❌ Ошибка загрузки</p>';
+                console.error('Ошибка загрузки статуса:', e);
             }
         }
 
