@@ -56,8 +56,8 @@
         .rating-stars { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
         .rating-stars button { font-size: 32px; background: none; border: none; cursor: pointer; transition: transform 0.2s; }
         .rating-stars button:active { transform: scale(1.2); }
-        .rating-stars button.active { color: #f5a623; }
-        .rating-stars button.inactive { color: #ccc; }
+        .rating-stars button.selected { color: #f5a623; }
+        .rating-stars button:not(.selected) { color: #ccc; }
     </style>
 </head>
 <body>
@@ -67,7 +67,6 @@
             <p>Доставка еды в Бородино</p>
         </div>
 
-        <!-- Условия доставки -->
         <div class="card">
             <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📋 Условия доставки</div>
             <div class="info-grid">
@@ -91,17 +90,10 @@
                 <div class="form-group"><label>Адрес доставки</label><input type="text" id="address" placeholder="ул. Ленина, д. 5, кв. 12"></div>
                 <div class="form-group"><label>Телефон</label><input type="text" id="phone" placeholder="+7 999 111 22 33"></div>
                 <div class="form-group"><label>Ваше имя</label><input type="text" id="name" placeholder="Алексей"></div>
-                
-                <!-- Галочка согласия -->
                 <div class="checkbox-group">
                     <input type="checkbox" id="agree" onchange="toggleSubmit()">
-                    <label for="agree">
-                        Я согласен с 
-                        <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">политикой конфиденциальности</a> 
-                        и условиями доставки
-                    </label>
+                    <label for="agree">Я согласен с <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">политикой конфиденциальности</a> и условиями доставки</label>
                 </div>
-
                 <button class="btn" id="submitBtn" onclick="createOrder()" disabled>📤 Отправить заявку</button>
             </div>
         </div>
@@ -114,17 +106,10 @@
             <div class="card" id="status-container"><div class="loading">Загрузка...</div></div>
         </div>
 
-        <!-- Подвал -->
         <div class="footer">
-            <div class="privacy-link">
-                <a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">🔒 Политика конфиденциальности</a>
-            </div>
-            <div style="margin-top: 4px;">
-                По всем вопросам: <a href="https://vk.ru/club240383766" target="_blank">Сообщество ВКонтакте</a>
-            </div>
-            <div style="margin-top: 4px; font-size: 11px; color: #aaa;">
-                DoSHtavKa © 2026
-            </div>
+            <div class="privacy-link"><a href="https://s86849730-png.github.io/vk-delivery-app/privacy.html" target="_blank">🔒 Политика конфиденциальности</a></div>
+            <div style="margin-top: 4px;">По всем вопросам: <a href="https://vk.ru/club240383766" target="_blank">Сообщество ВКонтакте</a></div>
+            <div style="margin-top: 4px; font-size: 11px; color: #aaa;">DoSHtavKa © 2026</div>
         </div>
     </div>
 
@@ -133,16 +118,55 @@
     <script>
         const API_BASE = 'https://cassette-chrome-triumph-configurations.trycloudflare.com';
         let currentOrderId = null;
-        
+        let selectedRating = 0;
+        let USER_ID = null;
+
+        // ===== ПОЛУЧЕНИЕ РЕАЛЬНОГО USER_ID ИЗ VK =====
         function getUserId() {
+            // 1. Пробуем получить из URL (если VK передал)
             const match = window.location.search.match(/[?&]vk_user_id=([^&]+)/);
-            if (match) return parseInt(match[1]);
+            if (match) {
+                USER_ID = parseInt(match[1]);
+                localStorage.setItem('vk_user_id', USER_ID);
+                return USER_ID;
+            }
+
+            // 2. Пробуем из localStorage (если уже сохраняли)
+            const saved = localStorage.getItem('vk_user_id');
+            if (saved) {
+                USER_ID = parseInt(saved);
+                return USER_ID;
+            }
+
+            // 3. Пробуем получить через VK Bridge (если открыто внутри VK)
+            if (typeof VK !== 'undefined' && VK.callMethod) {
+                VK.callMethod('VKWebAppGetUserInfo', {}, function(data) {
+                    if (data && data.response && data.response.id) {
+                        USER_ID = data.response.id;
+                        localStorage.setItem('vk_user_id', USER_ID);
+                        // После получения ID перезагружаем данные
+                        loadHistory();
+                        loadStatus();
+                    }
+                });
+                // Возвращаем заглушку, пока ID не получен
+                return USER_ID || 123456789;
+            }
+
+            // 4. Если ничего не помогло — возвращаем заглушку
             return 123456789;
         }
 
-        const USER_ID = getUserId();
-        console.log('✅ User ID:', USER_ID);
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        document.addEventListener('DOMContentLoaded', function() {
+            USER_ID = getUserId();
+            console.log('✅ User ID:', USER_ID);
+            switchTab('order');
+            loadHistory();
+            loadStatus();
+        });
 
+        // ===== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) =====
         function toggleSubmit() {
             const agree = document.getElementById('agree').checked;
             document.getElementById('submitBtn').disabled = !agree;
@@ -328,18 +352,14 @@
             }
         }
 
-        let selectedRating = 0;
-
         function setRating(rating) {
             selectedRating = rating;
             document.querySelectorAll('#ratingStars button').forEach(btn => {
                 const btnRating = parseInt(btn.dataset.rating);
                 if (btnRating <= rating) {
-                    btn.classList.add('active');
-                    btn.classList.remove('inactive');
+                    btn.classList.add('selected');
                 } else {
-                    btn.classList.remove('active');
-                    btn.classList.add('inactive');
+                    btn.classList.remove('selected');
                 }
             });
         }
@@ -370,7 +390,7 @@
             }
         }
 
-        async function rateOrder(orderId) {
+        function rateOrder(orderId) {
             currentOrderId = orderId;
             switchTab('status');
             setTimeout(() => loadStatus(), 300);
@@ -382,11 +402,6 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            switchTab('order');
-            console.log('✅ DoSHtavKa v2 загружен!');
-        });
 
         setInterval(() => {
             if (!document.getElementById('tab-status').classList.contains('hidden')) loadStatus();
